@@ -4,10 +4,9 @@ import { useState } from "react";
 import Button from "@/components/ui/Button";
 import { HONEYPOT_FIELD } from "@/lib/security";
 
-// Secondary CTA — festive-drops capture (doc 01 Flow 2). The honeypot field is
-// present now to establish the form-security pattern; persistence + server-side
-// validation + rate limiting are wired in Phase 4 (lib/security.ts + a server
-// action against the subscribers table). No fake "stored" state here.
+// Secondary CTA — festive-drops capture (doc 01 Flow 2), reused across the
+// storefront. Honeypot present now; persistence + server-side validation +
+// rate limiting are wired in Phase 4. No fake "stored" state here.
 export default function NewsletterBand() {
   const [note, setNote] = useState("");
 

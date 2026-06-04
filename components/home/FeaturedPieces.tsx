@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { FEATURED, formatInr } from "@/lib/catalog";
-import ImageSlot from "@/components/ui/ImageSlot";
+import { FEATURED } from "@/lib/catalog";
+import ProductCard from "@/components/shop/ProductCard";
 import Reveal from "@/components/site/Reveal";
 
 // Horizontal scroll-snap rail — a different layout family from the category
@@ -25,22 +25,7 @@ export default function FeaturedPieces() {
               key={p.slug}
               className="min-w-[260px] shrink-0 snap-start sm:min-w-[300px]"
             >
-              <Link href={`/product/${p.slug}`} className="group block">
-                <ImageSlot
-                  label={p.name}
-                  className="aspect-square w-full transition-colors group-hover:border-ink-muted/40"
-                />
-                <div className="mt-3">
-                  <p className="font-heading text-lg text-ink">{p.name}</p>
-                  <p className="text-sm text-ink-muted">
-                    {p.motif} motif, {p.region}
-                  </p>
-                  <p className="mt-1 text-sm text-ink">
-                    {formatInr(p.priceInr)}{" "}
-                    <span className="text-ink-muted">incl. GST</span>
-                  </p>
-                </div>
-              </Link>
+              <ProductCard product={p} />
             </li>
           ))}
         </ul>

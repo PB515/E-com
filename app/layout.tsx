@@ -22,11 +22,11 @@ const outfit = Outfit({
 export const metadata: Metadata = {
   // Title template: the brand name appears ONCE (launch-gate check, doc 11).
   title: {
-    default: "Bugadi — Traditional Indian Ornament, Styled to Wear Today",
+    default: "Bugadi: Traditional Indian Ornament, Styled to Wear Today",
     template: `%s | ${SITE_NAME}`,
   },
   description:
-    "Oxidised, antique-finish Indian jewellery — ear cuffs, earrings, bracelets, hasli, and pendants. Traditional ornament, styled to wear today.",
+    "Oxidised, antique-finish Indian jewellery: ear cuffs, earrings, bracelets, hasli, and pendants. Traditional ornament, styled to wear today.",
 };
 
 export default function RootLayout({

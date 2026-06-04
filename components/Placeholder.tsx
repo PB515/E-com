@@ -14,7 +14,7 @@ export default function Placeholder({
       <p className="text-xs uppercase tracking-[0.3em] text-ink-muted">Bugadi</p>
       <h1 className="font-heading text-3xl text-ink sm:text-4xl">{title}</h1>
       <p className="max-w-md text-ink-muted">
-        {note ?? "Scaffolded route — content arrives in a later phase."}
+        {note ?? "Scaffolded route. Content arrives in a later phase."}
       </p>
     </main>
   );

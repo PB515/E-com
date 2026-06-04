@@ -5,7 +5,7 @@ export default function NotFound() {
   return (
     <div className="flex flex-1 flex-col">
       <Placeholder
-        title="404 — Not found"
+        title="404, page not found"
         note="This piece may have moved or sold out."
       />
       <div className="pb-16 text-center">
