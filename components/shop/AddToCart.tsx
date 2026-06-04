@@ -10,11 +10,13 @@ import { useCart } from "@/lib/cart/CartContext";
 // (doc 03b — sticky add-to-cart on mobile). Phase 3: adds to the client cart.
 export default function AddToCart({
   slug,
+  name,
   priceInr,
   soldOut,
   maxQty,
 }: {
   slug: string;
+  name: string;
   priceInr: number;
   soldOut: boolean;
   maxQty: number;
@@ -26,7 +28,7 @@ export default function AddToCart({
   const clamp = (n: number) => Math.min(Math.max(n, 1), Math.max(maxQty, 1));
 
   function handleAdd() {
-    add(slug, qty);
+    add({ slug, name, priceInr, stock: maxQty }, qty);
     setAdded(true);
     window.setTimeout(() => setAdded(false), 2500);
   }

@@ -5,9 +5,10 @@ import HeritageStrip from "@/components/home/HeritageStrip";
 import TrustStrip from "@/components/home/TrustStrip";
 import NewsletterBand from "@/components/site/NewsletterBand";
 
-// Home — section order per doc 03b. Each section is a distinct layout family
-// (skill §4.7): split hero, asymmetric grid, horizontal rail, editorial band,
-// hairline trust strip, centered CTA band.
+// Home — section order per doc 03b. Dynamic because the featured rail reads
+// live products from the database.
+export const dynamic = "force-dynamic";
+
 export default function Home() {
   return (
     <>

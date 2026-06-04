@@ -26,13 +26,13 @@ export default function CheckoutSummary() {
         </p>
       ) : (
         <ul className="mt-4 flex flex-col gap-3">
-          {lines.map(({ product, qty, lineTotal }) => (
-            <li key={product.slug} className="flex justify-between gap-3 text-sm">
+          {lines.map((line) => (
+            <li key={line.slug} className="flex justify-between gap-3 text-sm">
               <span className="text-ink-muted">
-                {product.name}
-                <span className="text-ink-muted/70"> &times; {qty}</span>
+                {line.name}
+                <span className="text-ink-muted/70"> &times; {line.qty}</span>
               </span>
-              <span className="text-ink">{formatInr(lineTotal)}</span>
+              <span className="text-ink">{formatInr(line.lineTotal)}</span>
             </li>
           ))}
         </ul>

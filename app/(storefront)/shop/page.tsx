@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CATEGORIES, PRODUCTS } from "@/lib/catalog";
+import { CATEGORIES } from "@/lib/catalog";
+import { getAllProducts } from "@/lib/products";
 import ProductCard from "@/components/shop/ProductCard";
 import NewsletterBand from "@/components/site/NewsletterBand";
 import Reveal from "@/components/site/Reveal";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Shop all",
@@ -11,7 +14,8 @@ export const metadata: Metadata = {
     "The full Bugadi collection of oxidised, antique-finish jewellery: ear cuffs, earrings, bracelets, hasli, and pendants.",
 };
 
-export default function ShopPage() {
+export default async function ShopPage() {
+  const products = await getAllProducts();
   return (
     <>
       <section className="mx-auto max-w-[1400px] px-5 pb-2 pt-12 sm:px-8 lg:pt-16">
@@ -35,7 +39,7 @@ export default function ShopPage() {
 
       <section className="mx-auto max-w-[1400px] px-5 py-10 sm:px-8">
         <div className="grid grid-cols-2 gap-x-4 gap-y-10 lg:grid-cols-4">
-          {PRODUCTS.map((p, i) => (
+          {products.map((p, i) => (
             <Reveal key={p.slug} trigger="view" delay={(i % 4) * 0.05}>
               <ProductCard product={p} />
             </Reveal>

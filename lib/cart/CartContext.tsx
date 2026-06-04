@@ -1,10 +1,10 @@
 "use client";
 
 /**
- * Client cart (Phase 3). State only — no DB, no payment (that is Phase 4).
- * Stores {slug, qty}; product details are resolved from lib/catalog so price
- * and stock stay single-sourced. Persists to localStorage. The real order +
- * GST + payment rail replaces the persistence layer in Phase 4.
+ * Client cart. Stores a SNAPSHOT per line (slug, name, price, max stock) so the
+ * client never needs the product database to render the bag. Persists to
+ * localStorage. The snapshot is for DISPLAY only — at checkout the server
+ * re-reads price/stock from Supabase and never trusts these client values.
  */
 import {
   createContext,
@@ -14,16 +14,23 @@ import {
   useMemo,
   useState,
 } from "react";
-import { getProduct, type Product } from "@/lib/catalog";
+
+export interface CartItemInput {
+  slug: string;
+  name: string;
+  priceInr: number;
+  stock: number;
+}
 
 interface CartEntry {
   slug: string;
+  name: string;
+  priceInr: number;
   qty: number;
+  maxStock: number;
 }
 
-export interface CartLine {
-  product: Product;
-  qty: number;
+export interface CartLine extends CartEntry {
   lineTotal: number;
 }
 
@@ -32,7 +39,7 @@ interface CartContextValue {
   subtotal: number;
   lines: CartLine[];
   ready: boolean;
-  add: (slug: string, qty?: number) => void;
+  add: (item: CartItemInput, qty?: number) => void;
   changeQty: (slug: string, delta: number) => void;
   remove: (slug: string) => void;
   clear: () => void;
@@ -45,7 +52,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [entries, setEntries] = useState<CartEntry[]>([]);
   const [ready, setReady] = useState(false);
 
-  // hydrate from localStorage after mount (avoids SSR mismatch)
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -65,30 +71,37 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [entries, ready]);
 
-  const add = useCallback((slug: string, qty = 1) => {
-    const product = getProduct(slug);
-    if (!product || product.stock <= 0) return;
+  const add = useCallback((item: CartItemInput, qty = 1) => {
+    if (item.stock <= 0) return;
     setEntries((prev) => {
-      const existing = prev.find((e) => e.slug === slug);
+      const existing = prev.find((e) => e.slug === item.slug);
       if (existing) {
         return prev.map((e) =>
-          e.slug === slug
-            ? { ...e, qty: Math.min(e.qty + qty, product.stock) }
+          e.slug === item.slug
+            ? { ...e, qty: Math.min(e.qty + qty, item.stock), maxStock: item.stock, priceInr: item.priceInr }
             : e,
         );
       }
-      return [...prev, { slug, qty: Math.min(qty, product.stock) }];
+      return [
+        ...prev,
+        {
+          slug: item.slug,
+          name: item.name,
+          priceInr: item.priceInr,
+          qty: Math.min(qty, item.stock),
+          maxStock: item.stock,
+        },
+      ];
     });
   }, []);
 
-  // functional delta update — correct even on rapid clicks before a re-render
   const changeQty = useCallback((slug: string, delta: number) => {
     setEntries((prev) =>
-      prev.map((e) => {
-        if (e.slug !== slug) return e;
-        const max = getProduct(slug)?.stock ?? 99;
-        return { ...e, qty: Math.max(1, Math.min(e.qty + delta, max)) };
-      }),
+      prev.map((e) =>
+        e.slug === slug
+          ? { ...e, qty: Math.max(1, Math.min(e.qty + delta, e.maxStock)) }
+          : e,
+      ),
     );
   }, []);
 
@@ -99,14 +112,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const clear = useCallback(() => setEntries([]), []);
 
   const value = useMemo<CartContextValue>(() => {
-    const lines: CartLine[] = entries
-      .map((e) => {
-        const product = getProduct(e.slug);
-        return product
-          ? { product, qty: e.qty, lineTotal: product.priceInr * e.qty }
-          : null;
-      })
-      .filter((l): l is CartLine => l !== null);
+    const lines: CartLine[] = entries.map((e) => ({
+      ...e,
+      lineTotal: e.priceInr * e.qty,
+    }));
     return {
       lines,
       count: entries.reduce((sum, e) => sum + e.qty, 0),

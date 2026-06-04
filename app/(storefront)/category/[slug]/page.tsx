@@ -1,17 +1,13 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import {
-  CATEGORIES,
-  getCategory,
-  productsByCategory,
-} from "@/lib/catalog";
+import { getCategory } from "@/lib/catalog";
+import { getProductsByCategory } from "@/lib/products";
 import ProductCard from "@/components/shop/ProductCard";
 import NewsletterBand from "@/components/site/NewsletterBand";
 import Reveal from "@/components/site/Reveal";
 
-export function generateStaticParams() {
-  return CATEGORIES.map((c) => ({ slug: c.slug }));
-}
+// Categories are fixed; product data is read live from Supabase per request.
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
@@ -21,10 +17,7 @@ export async function generateMetadata({
   const { slug } = await params;
   const category = getCategory(slug);
   if (!category) return { title: "Not found" };
-  return {
-    title: `Oxidised ${category.name}`,
-    description: category.intro,
-  };
+  return { title: `Oxidised ${category.name}`, description: category.intro };
 }
 
 export default async function CategoryPage({
@@ -36,7 +29,7 @@ export default async function CategoryPage({
   const category = getCategory(slug);
   if (!category) notFound();
 
-  const products = productsByCategory(slug);
+  const products = await getProductsByCategory(slug);
 
   return (
     <>

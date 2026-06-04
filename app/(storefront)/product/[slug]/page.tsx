@@ -1,21 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import {
-  PRODUCTS,
-  getProduct,
-  getCategory,
-  relatedProducts,
-  formatInr,
-} from "@/lib/catalog";
+import { getCategory, formatInr } from "@/lib/catalog";
+import { getProductBySlug, getRelated } from "@/lib/products";
 import ImageSlot from "@/components/ui/ImageSlot";
 import ProductCard from "@/components/shop/ProductCard";
 import AddToCart from "@/components/shop/AddToCart";
 import Reveal from "@/components/site/Reveal";
 
-export function generateStaticParams() {
-  return PRODUCTS.map((p) => ({ slug: p.slug }));
-}
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
@@ -23,7 +16,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const product = getProduct(slug);
+  const product = await getProductBySlug(slug);
   if (!product) return { title: "Not found" };
   return {
     title: product.name,
@@ -37,11 +30,11 @@ export default async function ProductPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const product = getProduct(slug);
+  const product = await getProductBySlug(slug);
   if (!product) notFound();
 
   const category = getCategory(product.category);
-  const related = relatedProducts(product, 3);
+  const related = await getRelated(product, 3);
   const soldOut = product.stock <= 0;
 
   // Product schema (doc 11). No invented reviews/ratings. Image omitted until
@@ -111,6 +104,7 @@ export default async function ProductPage({
 
           <AddToCart
             slug={product.slug}
+            name={product.name}
             priceInr={product.priceInr}
             soldOut={soldOut}
             maxQty={product.stock}

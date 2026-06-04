@@ -45,52 +45,47 @@ export default function CartView() {
       <div className="mt-10 grid gap-12 lg:grid-cols-[1.6fr_1fr]">
         {/* Lines */}
         <ul className="divide-y divide-border border-y border-border">
-          {lines.map(({ product, qty, lineTotal }) => (
-            <li key={product.slug} className="flex gap-4 py-5">
-              <Link href={`/product/${product.slug}`} className="shrink-0">
+          {lines.map((line) => (
+            <li key={line.slug} className="flex gap-4 py-5">
+              <Link href={`/product/${line.slug}`} className="shrink-0">
                 <ImageSlot className="h-24 w-24" rounded="rounded-xl" />
               </Link>
               <div className="flex flex-1 flex-col">
                 <div className="flex justify-between gap-4">
-                  <div>
-                    <Link
-                      href={`/product/${product.slug}`}
-                      className="font-heading text-lg text-ink hover:text-ink-muted"
-                    >
-                      {product.name}
-                    </Link>
-                    <p className="text-sm text-ink-muted">
-                      {product.motif} motif, {product.region}
-                    </p>
-                  </div>
-                  <p className="text-sm text-ink">{formatInr(lineTotal)}</p>
+                  <Link
+                    href={`/product/${line.slug}`}
+                    className="font-heading text-lg text-ink hover:text-ink-muted"
+                  >
+                    {line.name}
+                  </Link>
+                  <p className="text-sm text-ink">{formatInr(line.lineTotal)}</p>
                 </div>
 
                 <div className="mt-auto flex items-center justify-between pt-4">
                   <div className="flex items-center rounded-full border border-border">
                     <button
                       type="button"
-                      onClick={() => changeQty(product.slug, -1)}
+                      onClick={() => changeQty(line.slug, -1)}
                       className="p-2.5 text-ink disabled:text-ink-muted"
                       aria-label="Decrease quantity"
-                      disabled={qty <= 1}
+                      disabled={line.qty <= 1}
                     >
                       <Minus size={14} />
                     </button>
-                    <span className="w-7 text-center text-sm tabular-nums text-ink">{qty}</span>
+                    <span className="w-7 text-center text-sm tabular-nums text-ink">{line.qty}</span>
                     <button
                       type="button"
-                      onClick={() => changeQty(product.slug, 1)}
+                      onClick={() => changeQty(line.slug, 1)}
                       className="p-2.5 text-ink disabled:text-ink-muted"
                       aria-label="Increase quantity"
-                      disabled={qty >= product.stock}
+                      disabled={line.qty >= line.maxStock}
                     >
                       <Plus size={14} />
                     </button>
                   </div>
                   <button
                     type="button"
-                    onClick={() => remove(product.slug)}
+                    onClick={() => remove(line.slug)}
                     className="flex items-center gap-1.5 text-sm text-ink-muted transition-colors hover:text-ink"
                   >
                     <Trash size={16} />
