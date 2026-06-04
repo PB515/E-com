@@ -109,7 +109,12 @@ export default async function ProductPage({
             <span className="text-base text-ink-muted">incl. GST</span>
           </p>
 
-          <AddToCart priceInr={product.priceInr} soldOut={soldOut} maxQty={product.stock} />
+          <AddToCart
+            slug={product.slug}
+            priceInr={product.priceInr}
+            soldOut={soldOut}
+            maxQty={product.stock}
+          />
 
           <p className="mt-4 text-sm text-ink-muted">
             {soldOut

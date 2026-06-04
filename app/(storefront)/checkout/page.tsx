@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import CheckoutSummary from "@/components/cart/CheckoutSummary";
 
 export const metadata: Metadata = { title: "Checkout" };
 
-// Phase 2 = static shell. The live flow (address -> place-of-supply GST ->
-// Razorpay test / COD -> idempotent webhook) is wired in Phase 4. Fields are
-// laid out so the structure is real; the form does not submit yet.
+// Phase 3: the summary reads the live cart. The form structure is laid out for
+// Phase 4, which wires the flow (address -> place-of-supply GST -> Razorpay
+// test / COD -> idempotent webhook). The form does not submit yet.
 const STATES = [
   "Andhra Pradesh", "Assam", "Bihar", "Chhattisgarh", "Delhi", "Goa",
   "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka",
@@ -81,40 +81,7 @@ export default function CheckoutPage() {
         </form>
 
         {/* Summary */}
-        <aside className="h-fit rounded-3xl border border-border bg-surface p-6">
-          <h2 className="font-heading text-xl text-ink">Order summary</h2>
-          <p className="mt-4 text-sm text-ink-muted">
-            Your bag is empty. Add a piece to see your total, GST, and shipping
-            here.
-          </p>
-          <dl className="mt-6 flex flex-col gap-2 border-t border-border pt-6 text-sm">
-            <div className="flex justify-between text-ink-muted">
-              <dt>Subtotal</dt><dd>add items</dd>
-            </div>
-            <div className="flex justify-between text-ink-muted">
-              <dt>GST (12%)</dt><dd>computed by state</dd>
-            </div>
-            <div className="flex justify-between text-ink-muted">
-              <dt>Shipping</dt><dd>at checkout</dd>
-            </div>
-          </dl>
-          <button
-            type="button"
-            disabled
-            className="mt-6 w-full cursor-not-allowed rounded-full bg-surface-2 px-6 py-3 text-sm font-medium text-ink-muted"
-          >
-            Pay (test mode), coming next
-          </button>
-          <p className="mt-3 text-center text-xs text-ink-muted">
-            Razorpay test and cash on delivery, wired in the next update.
-          </p>
-          <Link
-            href="/shop"
-            className="mt-4 block text-center text-sm text-primary hover:underline"
-          >
-            Continue shopping
-          </Link>
-        </aside>
+        <CheckoutSummary />
       </div>
     </section>
   );

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { List, X, ShoppingBag } from "@phosphor-icons/react";
 import { CATEGORIES } from "@/lib/catalog";
+import { useCart } from "@/lib/cart/CartContext";
 
 const navLinks = [
   ...CATEGORIES.map((c) => ({ href: `/category/${c.slug}`, label: c.name })),
@@ -12,6 +13,7 @@ const navLinks = [
 
 export default function SiteHeader() {
   const [open, setOpen] = useState(false);
+  const { count, ready } = useCart();
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-bg/85 backdrop-blur-md">
@@ -41,10 +43,15 @@ export default function SiteHeader() {
         <div className="flex items-center gap-2">
           <Link
             href="/cart"
-            className="rounded-full p-2 text-ink transition-colors hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-            aria-label="Cart"
+            className="relative rounded-full p-2 text-ink transition-colors hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            aria-label={ready && count > 0 ? `Cart, ${count} item${count === 1 ? "" : "s"}` : "Cart"}
           >
             <ShoppingBag size={22} />
+            {ready && count > 0 ? (
+              <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-medium tabular-nums text-accent-ink">
+                {count}
+              </span>
+            ) : null}
           </Link>
           <button
             type="button"

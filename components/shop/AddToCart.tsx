@@ -1,28 +1,34 @@
 "use client";
 
 import { useState } from "react";
-import { Minus, Plus } from "@phosphor-icons/react";
+import Link from "next/link";
+import { Minus, Plus, Check } from "@phosphor-icons/react";
 import { formatInr } from "@/lib/catalog";
+import { useCart } from "@/lib/cart/CartContext";
 
-// Buy control: functional quantity stepper + Add button, plus a mobile sticky
-// bar (skill / doc 03b — sticky add-to-cart on mobile). Cart state itself is
-// wired in Phase 3; for now Add gives honest feedback, it does not fake storage.
+// Buy control: quantity stepper + Add button, plus a mobile sticky bar
+// (doc 03b — sticky add-to-cart on mobile). Phase 3: adds to the client cart.
 export default function AddToCart({
+  slug,
   priceInr,
   soldOut,
   maxQty,
 }: {
+  slug: string;
   priceInr: number;
   soldOut: boolean;
   maxQty: number;
 }) {
+  const { add } = useCart();
   const [qty, setQty] = useState(1);
-  const [note, setNote] = useState("");
+  const [added, setAdded] = useState(false);
 
   const clamp = (n: number) => Math.min(Math.max(n, 1), Math.max(maxQty, 1));
 
-  function add() {
-    setNote("Your bag opens in the next update. Checkout runs in test mode.");
+  function handleAdd() {
+    add(slug, qty);
+    setAdded(true);
+    window.setTimeout(() => setAdded(false), 2500);
   }
 
   return (
@@ -58,16 +64,20 @@ export default function AddToCart({
             </div>
             <button
               type="button"
-              onClick={add}
-              className="flex-1 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-ink transition-colors hover:bg-ink active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+              onClick={handleAdd}
+              className="flex flex-1 items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-ink transition-colors hover:bg-ink active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
             >
-              Add to bag
+              {added ? <Check size={16} /> : null}
+              {added ? "Added" : "Add to bag"}
             </button>
           </div>
         )}
-        {note ? (
+        {added ? (
           <p className="mt-3 text-sm text-primary" role="status">
-            {note}
+            Added to your bag.{" "}
+            <Link href="/cart" className="underline underline-offset-2">
+              View bag
+            </Link>
           </p>
         ) : null}
       </div>
@@ -82,10 +92,10 @@ export default function AddToCart({
             </span>
             <button
               type="button"
-              onClick={add}
+              onClick={handleAdd}
               className="rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-ink active:translate-y-px"
             >
-              Add to bag
+              {added ? "Added" : "Add to bag"}
             </button>
           </div>
         </div>
