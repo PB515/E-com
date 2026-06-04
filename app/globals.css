@@ -1,36 +1,39 @@
 @import "tailwindcss";
 
 /* ─────────────────────────────────────────────────────────────
-   Bugadi design tokens (doc 04 — "oxidised heritage").
-   This is the ONLY place raw hex lives. Components MUST use the
-   token utilities (bg-bg, text-ink, border-border, font-heading…)
-   — NO hardcoded hex anywhere else in the build.
-   Hex values are indicative (finalized + WCAG-contrast-verified in
-   Phase 1 via the frontend-design skill).
+   Bugadi design tokens (doc 04 — revised: "cool oxidised silver on
+   near-black", design-taste-frontend skill).
+   This is the ONLY place raw hex lives. Components MUST use the token
+   utilities (bg-bg, text-ink, text-primary, border-border, font-heading…)
+   — NO hardcoded hex anywhere else (skill §4.2 Color-Consistency Lock).
+   Page theme is LOCKED dark (skill §4.11). One accent (rose), used sparingly.
+   Contrast WCAG-AA-verified at launch.
    ───────────────────────────────────────────────────────────── */
 @theme {
-  --color-bg: #1e1b18; /* deep warm charcoal — primary background */
-  --color-surface: #2a2622; /* lifted warm-charcoal — cards/surfaces */
-  --color-ink: #f2ede4; /* warm off-white — primary text */
-  --color-ink-muted: #b8afa2; /* muted silver-grey — secondary text */
-  --color-primary: #c9c4b8; /* antique silver — CTAs / links / accents */
-  --color-primary-ink: #1e1b18; /* dark ink ON the silver CTA (contrast-safe) */
-  --color-accent: #c69a5c; /* warm brass/gold — used sparingly */
-  --color-success: #6aa57c;
-  --color-warning: #d2a64a;
-  --color-error: #cf6450;
-  --color-border: #3a352f; /* low-contrast warm divider */
+  --color-bg: #0d0e10; /* near-black, slightly cool — NOT pure black, NOT warm espresso */
+  --color-surface: #16181b; /* lifted cool charcoal — cards/surfaces */
+  --color-surface-2: #1f2225; /* second elevation — image slots, insets */
+  --color-ink: #eceef0; /* cool off-white — primary text */
+  --color-ink-muted: #9aa0a6; /* muted cool silver-grey — secondary text */
+  --color-primary: #c8cbd0; /* antique/oxidised silver — CTAs / links (matte, not chrome) */
+  --color-primary-ink: #0d0e10; /* near-black text ON the silver CTA (contrast-safe) */
+  --color-accent: #b23a52; /* THE one accent — deep desaturated rose; sparingly */
+  --color-accent-ink: #fdf2f4; /* text on the accent fill */
+  --color-success: #5aa57c;
+  --color-warning: #c9a23e;
+  --color-error: #cf5a50;
+  --color-border: #2a2d31; /* low-contrast cool divider */
 
   --radius-sm: 4px;
   --radius-md: 8px;
   --radius-lg: 16px;
 
-  /* System stacks for now; the frontend-design skill wires the real
-     heritage serif + body sans in Phase 1 (kept off next/font here so
-     the Phase-0 build needs no network). */
-  --font-heading: Georgia, "Times New Roman", serif;
-  --font-body: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
-    Helvetica, Arial, sans-serif;
+  /* Fonts wired via next/font in layout.tsx (skill §3.A — never a <link>).
+     Heading = Cormorant Garamond (justified heritage serif, NOT Fraunces).
+     Body = Outfit (clean sans). Variables come from next/font. */
+  --font-heading: var(--font-cormorant), Georgia, "Times New Roman", serif;
+  --font-body: var(--font-outfit), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 @layer base {
@@ -41,16 +44,24 @@
     background-color: var(--color-bg);
     color: var(--color-ink);
     font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
   }
   h1,
   h2,
   h3,
   h4 {
     font-family: var(--font-heading);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+  /* tasteful selection in the brand accent */
+  ::selection {
+    background-color: color-mix(in srgb, var(--color-accent) 35%, transparent);
+    color: var(--color-ink);
   }
 }
 
-/* Accessibility: honor reduced motion globally (doc 04 / doc 10).
+/* Accessibility: honor reduced motion globally (doc 04 / doc 10 / skill §6.B).
    With reduced motion on, the page is fully static and readable. */
 @media (prefers-reduced-motion: reduce) {
   *,

@@ -24,6 +24,14 @@ DATE       | PHASE | PROMPT SUMMARY                         | RESULT / NOTES    
                                                               code update happens in Phase 1
 ```
 
+```
+2026-06-04 | 1     | Homepage build w/ taste-skill: tokens, | Build PASSES; no console      | (phase-1)
+                     fonts, header/footer, 6 home sections, | errors; 360px no overflow;
+                     (storefront) route group               | mobile menu works
+```
+
+**Phase 1 — DONE / green.** Built the home shape per 03b using `design-taste-frontend`: near-black/silver/rose tokens in `globals.css`; Cormorant + Outfit via `next/font`; `SiteHeader` (sticky, desktop nav + mobile menu) + `SiteFooter`; six sections each a distinct layout family (split hero · asymmetric 3-then-2 category grid · horizontal featured rail · editorial heritage band · hairline trust strip · centered newsletter band). Moved storefront routes into an `app/(storefront)` group so chrome never bleeds into admin. Motion = `Reveal` client leaf (entrance + scroll-reveal once, reduced-motion honored). Verified live in the preview at 1280 + 360px. Pre-Flight + doc-10 QA pass. **Placeholder image slots** (hero, 5 category, 6 featured) await real photography from `docs/image-prompts.md`. Newsletter form is UI-only (honeypot present; persistence is Phase 4). New deps (approved): `motion`, `@phosphor-icons/react`.
+
 **Frozen-doc change — doc 04 (logged).** Adopted the `design-taste-frontend` skill for storefront surfaces. Founder chose: **cool antique-silver on near-black** (brass/gold dropped; one accent = deep rose `#B23A52`) and a **justified heritage serif, not Fraunces** (Cormorant Garamond first choice). Recorded the skill's Design Read + dials (`VARIANCE 7 / MOTION 4 / DENSITY 3`) in doc 04. Reason for diverging from doc 04 v1: it had reached for the exact warm-beige/brass + Fraunces combo the skill names as the top-2 premium-consumer AI-tells. Admin + checkout are out of the skill's scope (docs 03/04 functional patterns). Token values land in `app/globals.css` during Phase 1, not here.
 
 **Phase 0 — DONE / green.** Acceptance met: Next.js (TS) runs · doc-04 tokens in `app/globals.css` (no hardcoded hex in components) · empty routes for every 03b page (+ 404/error/loading) · skills in `.claude/skills/` · `.env.local` gitignored · **prod build passes locally**. Remaining (human): connect repo to Vercel for the blank deploy (needs your account link).
@@ -43,5 +51,10 @@ The scaffold is green and committed (`main` @ `f852c4c`; `phase-0` branch marks 
 **Heads-up for Phase 1 (toolkit task):** Bugadi is the **verification build for the experimental `taste-skill`** (`.claude/skills/taste-skill-main`). Per the skills INDEX: build one key page (the home or PDP) with `frontend-design`, then the same page with `taste-skill`, compare the output (**lift**), and check the two don't misfire when both are loaded (**trigger**). The outcome (replace / keep-both / drop) feeds back to the toolkit. Note the taste-skill `SKILL.md` is ~87 KB (heavy context).
 
 To start Phase 1 cleanly: `git checkout -b phase-1` off `main`, plan first (no code), build in small chunks, run the doc-10 QA gate, commit on the branch, merge when green.
+
+### Phase 1 → Phase 2
+Home is built and green on branch `phase-1` (merged to `main`). The storefront now lives under `app/(storefront)/` with `layout.tsx` providing `SiteHeader`/`SiteFooter`; **admin stays outside the group** so it never gets shop chrome. Design tokens are in `app/globals.css` (Tailwind v4 `@theme`) — near-black `--color-bg`, antique-silver `--color-primary`, one rose accent `--color-accent`; **use the token utilities, never raw hex**. Reusable pieces to build Phase 2 on: `components/ui/Button` (pill, silver primary), `components/ui/ImageSlot` (aspect-locked placeholder for real photos), `components/site/Reveal` (the only motion wrapper — entrance/scroll-reveal, reduced-motion safe), and `lib/catalog.ts` (placeholder category + featured data; replaced by Supabase in Phase 3). The `design-taste-frontend` skill governs storefront pages; admin/checkout do not. Phase 2 = the remaining storefront pages static (category, PDP with the Heritage Story block, cart, our-roots, shipping/returns/privacy/terms/contact) — they currently render the `Placeholder` stub. **Open first:** `docs/03b` (section orders) + `app/(storefront)/page.tsx` (home, as the pattern) + `docs/04`. Build the PDP carefully: the Heritage Story block is the killer feature.
+
+**Verification-build note (taste-skill):** Phase 1 used `design-taste-frontend` only. The toolkit asks to also build one key page with `frontend-design` and compare (lift) and check both don't misfire when loaded together (trigger). Candidate page for the comparison: the PDP in Phase 2. Capture the outcome for the toolkit (`v4-backlog`).
 
 *(Append a fresh resume note at every phase transition during the build.)*
