@@ -1,21 +1,44 @@
-/**
- * Razorpay ADAPTER BOUNDARY (doc 05 / billing-gst module).
- * ALL Razorpay calls live behind this module — never scattered through the
- * codebase. Switching gateway later = rewrite only this adapter.
- *
- * Rules carried in (Phase 4):
- *  - TEST MODE keys (rzp_test_…) from env, SERVER-SIDE only.
- *  - Hosted checkout → card data NEVER touches our server.
- *  - The webhook is the ONLY thing that marks an order paid, and is IDEMPOTENT.
- */
+import "server-only";
+import { createHmac } from "node:crypto";
+import Razorpay from "razorpay";
+import type {
+  CreateOrderArgs,
+  CreatedProviderOrder,
+  PaymentProvider,
+} from "@/lib/payments/types";
 
-export interface PaymentAdapter {
-  createOrder(args: {
-    amountInPaise: number;
-    receipt: string;
-  }): Promise<{ providerOrderId: string }>;
-  verifyWebhook(rawBody: string, signature: string): boolean;
+/**
+ * Razorpay ADAPTER (the later swap; PAYMENT_PROVIDER=razorpay). All Razorpay
+ * calls live here, behind the same PaymentProvider interface as the mock.
+ *  - TEST MODE keys (rzp_test_...) from env, server-side only.
+ *  - Hosted checkout -> card data NEVER touches our server.
+ *  - verifyWebhookSignature is HMAC-SHA256 over the raw body with the webhook
+ *    secret; the caller marks the order paid idempotently.
+ * Not exercised until the founder adds Razorpay test keys + a webhook.
+ */
+function client(): Razorpay {
+  return new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID!,
+    key_secret: process.env.RAZORPAY_KEY_SECRET!,
+  });
 }
 
-// TODO (Phase 4): implement against the Razorpay SDK using env keys by name only.
-export const razorpay = {} as Partial<PaymentAdapter>;
+export const razorpayProvider: PaymentProvider = {
+  name: "razorpay",
+
+  async createOrder({ orderRef, amountInPaise }: CreateOrderArgs): Promise<CreatedProviderOrder> {
+    const order = await client().orders.create({
+      amount: amountInPaise,
+      currency: "INR",
+      receipt: orderRef,
+    });
+    return { providerOrderId: order.id };
+  },
+
+  verifyWebhookSignature(rawBody: string, signature: string): boolean {
+    const expected = createHmac("sha256", process.env.RAZORPAY_WEBHOOK_SECRET || "")
+      .update(rawBody)
+      .digest("hex");
+    return expected === signature;
+  },
+};

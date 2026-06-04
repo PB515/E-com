@@ -35,22 +35,18 @@ SUPABASE_SERVICE_ROLE_KEY=       ← service_role / secret key   (server-only)
 
 ---
 
-## 2. Razorpay — payments (TEST mode)
+## 2. Payments — MOCK now, Razorpay LATER
 
-**What it's for:** the checkout payment (UPI / cards / netbanking) and COD. **Test mode** means the full real flow with no real money.
+**Decision:** we use a **mock payment provider** for now (no gateway account needed) and integrate real Razorpay later. Because payments sit behind an adapter (`lib/payments/`), the switch later is one env var (`PAYMENT_PROVIDER=razorpay`) plus the keys below — no checkout rewrite.
 
-**Get it:**
-1. Go to **https://razorpay.com** → sign up → open the **Dashboard**.
-2. Flip the top toggle to **Test Mode**.
-3. **Settings → API Keys → Generate Test Key**. Copy the **Key Id** (`rzp_test_…`) and **Key Secret** (shown once — save it).
-4. *(Webhook — we set this up together once the site has its URL:* **Settings → Webhooks → Add**, URL `https://e-com-tan-ten.vercel.app/api/webhooks/razorpay`, you choose a **secret** string → that becomes `RAZORPAY_WEBHOOK_SECRET`.*)*
+**Now:** nothing to get. `PAYMENT_PROVIDER=mock` is already set in `.env.local`. The mock runs the full real shape: create order → simulate success/fail → a **signed, idempotent confirmation marks the order paid** (no card data, no real money). COD works without any gateway.
 
-**Put in `.env.local`:**
+**Later (when you've decided the Razorpay business details):** razorpay.com → Dashboard → **Test Mode** → Settings → API Keys → Generate Test Key (`rzp_test_…` + secret); add a webhook to `https://e-com-tan-ten.vercel.app/api/webhooks/razorpay` with a secret you choose. Then fill the Razorpay block in `.env.local` and set `PAYMENT_PROVIDER=razorpay`.
 ```
-RAZORPAY_KEY_ID=             ← rzp_test_...            (server)
-NEXT_PUBLIC_RAZORPAY_KEY_ID= ← the same rzp_test_ id   (safe on client)
-RAZORPAY_KEY_SECRET=         ← the secret             (server-only)
-RAZORPAY_WEBHOOK_SECRET=     ← the webhook secret you choose (set when we add the webhook)
+RAZORPAY_KEY_ID=             ← rzp_test_...            (later)
+NEXT_PUBLIC_RAZORPAY_KEY_ID= ← the same rzp_test_ id   (later)
+RAZORPAY_KEY_SECRET=         ← the secret             (later, server-only)
+RAZORPAY_WEBHOOK_SECRET=     ← the webhook secret      (later, server-only)
 ```
 
 ---
@@ -91,10 +87,14 @@ RESEND_API_KEY=   ← re_...   (server-only)
 - `supabase/migrations/0001_init.sql` — the full schema + security rules + product seed (you run it in step 1).
 - `lib/tax.ts` — the GST place-of-supply calculation (verified: intra-state → CGST+SGST, inter-state → IGST, on GST-inclusive prices).
 - `lib/supabase/{client,server,admin}.ts` — the Supabase connections (read keys by name).
-- The adapter boundaries (`lib/payments/razorpay`, `lib/shipping/shiprocket`) are stubbed and get filled during the build.
+- `lib/payments/` — the payment adapter boundary + a working **mock** provider (and the real Razorpay adapter ready behind the same interface for the later swap).
 
-## When you've filled `.env.local`
-Tell me, and I'll build Phase 4 in the security-first order (per `docs/app-03`):
-**auth → row-level security → prove a logged-out / cross-user can't reach admin or order data → then** the catalog-from-Supabase, the checkout (place-of-supply GST + Razorpay test + idempotent webhook + invoice snapshot), Shiprocket, the confirmation email, and the admin screens.
+## Exactly what's needed NOW (to start the build)
+1. **Supabase — all three** keys, not just one: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (Project Settings → API). The URL + anon key are the two still empty.
+2. **Run the migration** `supabase/migrations/0001_init.sql` in Supabase SQL Editor.
+3. **Shiprocket** (`SHIPROCKET_EMAIL`/`PASSWORD`) and **Resend** (`RESEND_API_KEY`) — needed for the shipping + email steps; can come while I build the first part.
+4. Payments: nothing — mock is on.
 
-> You only need **Supabase** filled to start (auth + data + the denial gate). Razorpay/Shiprocket/Resend are needed a bit later in the same phase, so you can add them while I build the first part.
+## When `.env.local` has the Supabase three + the migration is run
+Tell me, and I build Phase 4 security-first (per `docs/app-03`):
+**auth → row-level security → prove a logged-out / cross-user can't reach admin or order data → then** catalog-from-Supabase, checkout (place-of-supply GST + **mock** payment + idempotent confirmation + invoice snapshot), Shiprocket, the confirmation email, and the admin screens.
