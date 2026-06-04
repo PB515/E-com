@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/lib/cart/CartContext";
 import { formatInr } from "@/lib/catalog";
+import { computeGstFromInclusive, gstIncludedInTotal } from "@/lib/tax";
 import { placeOrder } from "@/app/(storefront)/checkout/actions";
 
 const STATES = [
@@ -19,7 +20,13 @@ const inputClass =
   "w-full rounded-2xl border border-border bg-surface-2 px-4 py-3 text-sm text-ink placeholder:text-ink-muted/70 focus:border-ink-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent";
 const labelClass = "mb-2 block text-sm text-ink";
 
-export default function CheckoutClient() {
+export default function CheckoutClient({
+  sellerState,
+  gstRate,
+}: {
+  sellerState: string;
+  gstRate: number;
+}) {
   const router = useRouter();
   const { lines, subtotal, count, ready, clear } = useCart();
   const [form, setForm] = useState({
@@ -29,6 +36,12 @@ export default function CheckoutClient() {
   const [payment, setPayment] = useState<"online" | "cod">("online");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+
+  // Live GST: once a state is picked, show the actual CGST/SGST or IGST split.
+  const gst = form.state
+    ? computeGstFromInclusive(subtotal, gstRate, form.state, sellerState)
+    : null;
+  const gstTotal = gstIncludedInTotal(subtotal, gstRate);
 
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
@@ -150,10 +163,24 @@ export default function CheckoutClient() {
             ))}
           </ul>
           <dl className="mt-6 flex flex-col gap-2 border-t border-border pt-6 text-sm">
-            <div className="flex justify-between text-ink"><dt>Subtotal ({count})</dt><dd>{formatInr(subtotal)}</dd></div>
-            <div className="flex justify-between text-ink-muted"><dt>GST (12%)</dt><dd>included, split by state</dd></div>
+            <div className="flex justify-between text-ink-muted"><dt>Taxable value</dt><dd>{formatInr(subtotal - gstTotal)}</dd></div>
+            {gst ? (
+              gst.isIntraState ? (
+                <>
+                  <div className="flex justify-between text-ink-muted"><dt>CGST ({gstRate / 2}%)</dt><dd>{formatInr(gst.cgst)}</dd></div>
+                  <div className="flex justify-between text-ink-muted"><dt>SGST ({gstRate / 2}%)</dt><dd>{formatInr(gst.sgst)}</dd></div>
+                </>
+              ) : (
+                <div className="flex justify-between text-ink-muted"><dt>IGST ({gstRate}%)</dt><dd>{formatInr(gst.igst)}</dd></div>
+              )
+            ) : (
+              <div className="flex justify-between text-ink-muted"><dt>GST ({gstRate}%, incl.)</dt><dd>{formatInr(gstTotal)}</dd></div>
+            )}
             <div className="flex justify-between text-ink-muted"><dt>Shipping</dt><dd>free in test mode</dd></div>
           </dl>
+          {!form.state ? (
+            <p className="mt-3 text-xs text-ink-muted/80">Select your state to see the CGST/SGST or IGST split.</p>
+          ) : null}
           <div className="mt-5 flex justify-between border-t border-border pt-5 text-ink">
             <span className="font-medium">Total</span><span className="font-medium">{formatInr(subtotal)}</span>
           </div>

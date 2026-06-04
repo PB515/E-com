@@ -36,6 +36,17 @@ function normState(s: string): string {
 }
 
 /**
+ * The GST amount ALREADY INCLUDED in a GST-inclusive total (state-independent).
+ * Used for cart display before a shipping state is known.
+ */
+export function gstIncludedInTotal(
+  inclusiveTotal: number,
+  ratePct: number,
+): number {
+  return round2(inclusiveTotal - inclusiveTotal / (1 + ratePct / 100));
+}
+
+/**
  * Compute the GST breakdown from a GST-INCLUSIVE total.
  * @param inclusiveTotal sum of GST-inclusive line prices (INR)
  * @param ratePct GST rate, e.g. 12
