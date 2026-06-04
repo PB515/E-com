@@ -3,17 +3,21 @@
 import { useState } from "react";
 import Button from "@/components/ui/Button";
 import { HONEYPOT_FIELD } from "@/lib/security";
+import { subscribeNewsletter } from "@/app/(storefront)/actions";
 
-// Secondary CTA — festive-drops capture (doc 01 Flow 2), reused across the
-// storefront. Honeypot present now; persistence + server-side validation +
-// rate limiting are wired in Phase 4. No fake "stored" state here.
+// Secondary CTA — festive-drops capture (doc 01 Flow 2). Persists to Supabase
+// via a server action (honeypot + server-side validation).
 export default function NewsletterBand() {
   const [note, setNote] = useState("");
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    // TODO (Phase 4): POST to server action → honeypot + validate + rate-limit → subscribers.
-    setNote("Festive-drops sign-up opens with launch. Thanks for the interest.");
+    const fd = new FormData(e.currentTarget);
+    const r = await subscribeNewsletter({
+      email: String(fd.get("email") ?? ""),
+      hp: String(fd.get(HONEYPOT_FIELD) ?? ""),
+    });
+    setNote("error" in r && r.error ? r.error : "You're on the list for festive drops.");
   }
 
   return (
@@ -48,6 +52,7 @@ export default function NewsletterBand() {
             </label>
             <input
               id="newsletter-email"
+              name="email"
               type="email"
               required
               placeholder="you@email.com"
