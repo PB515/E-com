@@ -66,7 +66,13 @@ export default async function ProductPage({
       <div className="mx-auto grid max-w-[1400px] gap-10 px-5 pt-10 sm:px-8 lg:grid-cols-2 lg:gap-16 lg:pt-14">
         {/* Gallery */}
         <div>
-          <ImageSlot label={product.name} className="aspect-square w-full" />
+          <ImageSlot
+            label={product.name}
+            src={product.imageUrl}
+            alt={product.name}
+            sizes="(min-width: 1024px) 50vw, 100vw"
+            className="aspect-square w-full"
+          />
           {product.images > 1 ? (
             <div className="mt-4 grid grid-cols-4 gap-3">
               {Array.from({ length: Math.min(product.images, 4) }).map((_, i) => (

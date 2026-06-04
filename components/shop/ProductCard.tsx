@@ -11,6 +11,8 @@ export default function ProductCard({ product }: { product: Product }) {
       <div className="relative">
         <ImageSlot
           label={product.name}
+          src={product.imageUrl}
+          alt={product.name}
           className="aspect-square w-full transition-colors group-hover:border-ink-muted/40"
         />
         {soldOut ? (

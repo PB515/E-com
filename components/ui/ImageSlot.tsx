@@ -1,21 +1,40 @@
+import Image from "next/image";
 import { Diamond } from "@phosphor-icons/react/dist/ssr";
 
 /**
- * Honest, aspect-locked placeholder for a REAL product/hero photo.
- * Not a fake screenshot (skill §4.8) — a deliberately-composed slot in the
- * dark-editorial system, labeled for swap. Real photography (06b /
- * docs/image-prompts.md) replaces these before launch.
- * Pass an `aspect-*` class via `className` at the call site.
+ * Renders a REAL product image when `src` is provided (admin-uploaded, Supabase
+ * Storage), otherwise a deliberately-composed placeholder slot. Pass an
+ * `aspect-*` class via `className` at the call site.
  */
 export default function ImageSlot({
   label,
+  src,
+  alt,
   className = "",
   rounded = "rounded-2xl",
+  sizes = "(min-width: 1024px) 25vw, 50vw",
 }: {
   label?: string;
+  src?: string;
+  alt?: string;
   className?: string;
   rounded?: string;
+  sizes?: string;
 }) {
+  if (src) {
+    return (
+      <div className={`relative overflow-hidden ${rounded} border border-border bg-surface ${className}`}>
+        <Image
+          src={src}
+          alt={alt ?? label ?? "Product image"}
+          fill
+          sizes={sizes}
+          className="object-cover"
+        />
+      </div>
+    );
+  }
+
   return (
     <div
       className={`relative overflow-hidden ${rounded} border border-border bg-surface ${className}`}

@@ -43,6 +43,7 @@ export interface Product {
   images: number;
   stock: number; // 0 = out of stock
   featured?: boolean;
+  imageUrl?: string; // primary product image (Supabase Storage), if uploaded
 }
 
 export function getCategory(slug: string): Category | undefined {

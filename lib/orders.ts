@@ -203,6 +203,25 @@ async function finalizeOrder(orderId: string): Promise<void> {
     });
   }
 
+  // Decrement stock — the "ticker". Runs once per order (finalizeOrder only
+  // fires on the pending->paid / cod transition). When stock hits 0 the product
+  // shows sold-out on its own (storefront derives soldOut from stock <= 0).
+  const { data: stockItems } = await sb
+    .from("order_items")
+    .select("product_id,qty")
+    .eq("order_id", orderId);
+  for (const it of stockItems ?? []) {
+    const { data: p } = await sb
+      .from("products")
+      .select("stock")
+      .eq("id", it.product_id)
+      .maybeSingle();
+    if (p) {
+      const next = Math.max(0, Number(p.stock) - Number(it.qty));
+      await sb.from("products").update({ stock: next }).eq("id", it.product_id);
+    }
+  }
+
   // best-effort side effects — never block the order
   const { data: cust } = await sb
     .from("customers")

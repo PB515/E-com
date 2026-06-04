@@ -3,9 +3,16 @@ import { createPublicClient } from "@/lib/supabase/public";
 import type { Product, CategorySlug } from "@/lib/catalog";
 
 // Server data layer — reads PUBLIC product data from Supabase (anon, active
-// only). Maps DB snake_case rows to the Product shape the components use.
-// Admin edits (price/stock/story) reflect here on the next request.
+// only), with the primary product image embedded. Admin edits reflect on the
+// next request.
 
+const SELECT = "*, product_images(url,is_primary,sort_order)";
+
+interface ProductImageRow {
+  url: string;
+  is_primary: boolean | null;
+  sort_order: number | null;
+}
 interface ProductRow {
   slug: string;
   name: string;
@@ -21,6 +28,17 @@ interface ProductRow {
   images: number;
   stock: number;
   featured: boolean;
+  product_images?: ProductImageRow[] | null;
+}
+
+function primaryImage(rows?: ProductImageRow[] | null): string | undefined {
+  if (!rows || rows.length === 0) return undefined;
+  const sorted = [...rows].sort(
+    (a, b) =>
+      (b.is_primary ? 1 : 0) - (a.is_primary ? 1 : 0) ||
+      (a.sort_order ?? 0) - (b.sort_order ?? 0),
+  );
+  return sorted[0]?.url;
 }
 
 function mapRow(r: ProductRow): Product {
@@ -39,6 +57,7 @@ function mapRow(r: ProductRow): Product {
     images: r.images,
     stock: r.stock,
     featured: r.featured,
+    imageUrl: primaryImage(r.product_images),
   };
 }
 
@@ -46,7 +65,7 @@ export async function getAllProducts(): Promise<Product[]> {
   const sb = createPublicClient();
   const { data } = await sb
     .from("products")
-    .select("*")
+    .select(SELECT)
     .eq("is_active", true)
     .order("featured", { ascending: false })
     .order("name");
@@ -57,7 +76,7 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
   const sb = createPublicClient();
   const { data } = await sb
     .from("products")
-    .select("*")
+    .select(SELECT)
     .eq("slug", slug)
     .eq("is_active", true)
     .maybeSingle();
@@ -70,7 +89,7 @@ export async function getProductsByCategory(
   const sb = createPublicClient();
   const { data } = await sb
     .from("products")
-    .select("*")
+    .select(SELECT)
     .eq("is_active", true)
     .eq("category", category)
     .order("name");
@@ -81,7 +100,7 @@ export async function getFeatured(): Promise<Product[]> {
   const sb = createPublicClient();
   const { data } = await sb
     .from("products")
-    .select("*")
+    .select(SELECT)
     .eq("is_active", true)
     .eq("featured", true)
     .order("name");
