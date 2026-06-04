@@ -19,7 +19,12 @@ DATE       | PHASE | PROMPT SUMMARY                         | RESULT / NOTES    
                      tokens + all 03b routes + lib stubs    | git init, main+phase-0
 2026-06-04 | 0     | Consolidate skills → .claude/skills;    | Clean; .claudeskills/        | f852c4c
                      untrack auto-provisioned mirror        | untracked
+2026-06-04 | docs  | FROZEN-DOC CHANGE: doc 04 palette+type  | Logged spec change before    | (this commit)
+                     revised per taste-skill decision       | build (toolkit rule). Token
+                                                              code update happens in Phase 1
 ```
+
+**Frozen-doc change — doc 04 (logged).** Adopted the `design-taste-frontend` skill for storefront surfaces. Founder chose: **cool antique-silver on near-black** (brass/gold dropped; one accent = deep rose `#B23A52`) and a **justified heritage serif, not Fraunces** (Cormorant Garamond first choice). Recorded the skill's Design Read + dials (`VARIANCE 7 / MOTION 4 / DENSITY 3`) in doc 04. Reason for diverging from doc 04 v1: it had reached for the exact warm-beige/brass + Fraunces combo the skill names as the top-2 premium-consumer AI-tells. Admin + checkout are out of the skill's scope (docs 03/04 functional patterns). Token values land in `app/globals.css` during Phase 1, not here.
 
 **Phase 0 — DONE / green.** Acceptance met: Next.js (TS) runs · doc-04 tokens in `app/globals.css` (no hardcoded hex in components) · empty routes for every 03b page (+ 404/error/loading) · skills in `.claude/skills/` · `.env.local` gitignored · **prod build passes locally**. Remaining (human): connect repo to Vercel for the blank deploy (needs your account link).
 
