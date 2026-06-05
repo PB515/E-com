@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAdminAction } from "@/lib/audit";
+import { applyStockMovement, recomputeProductStock, type StockMovementInput } from "@/lib/stock";
 
 export interface ProductFields {
   name: string;
@@ -43,9 +44,12 @@ function revalidateStorefront(slug?: string) {
 
 export async function updateProduct(slug: string, fields: ProductFields) {
   const sb = await createClient();
+  // stock is now derived from variants (the mirror) — never overwrite it here
+  const { stock: _ignored, ...rest } = fields;
+  void _ignored;
   const { error } = await sb
     .from("products")
-    .update({ ...fields, updated_at: new Date().toISOString() })
+    .update({ ...rest, updated_at: new Date().toISOString() })
     .eq("slug", slug);
   if (error) return { error: error.message };
   await logAdminAction("product.update", "product", slug, { price: fields.price_inr, stock: fields.stock });
@@ -65,7 +69,7 @@ export async function createProduct(input: CreateProductInput) {
   if (!slug) return { error: "A name or slug is required." };
   if (!CATEGORIES.includes(input.category)) return { error: "Pick a valid category." };
 
-  const { error } = await sb.from("products").insert({
+  const { data: created, error } = await sb.from("products").insert({
     slug,
     category: input.category,
     name: input.name,
@@ -89,10 +93,12 @@ export async function createProduct(input: CreateProductInput) {
     breadth_cm: input.breadth_cm,
     height_cm: input.height_cm,
     images: 1,
-  });
-  if (error) {
-    return { error: error.code === "23505" ? "That slug already exists." : error.message };
+  }).select("id").single();
+  if (error || !created) {
+    return { error: error?.code === "23505" ? "That slug already exists." : (error?.message ?? "Could not create.") };
   }
+  // every product gets a default variant (stock lives on variants)
+  await sb.from("product_variants").insert({ product_id: created.id, label: "Standard", stock: Math.max(0, Math.floor(input.stock || 0)), sort_order: 0 });
   await logAdminAction("product.create", "product", slug, { name: input.name });
   revalidateStorefront(slug);
   return { ok: true as const, slug };
@@ -203,6 +209,67 @@ export async function deleteProductImage(slug: string, imageId: string) {
       if (next) await admin.from("product_images").update({ is_primary: true }).eq("id", next.id);
     }
   }
+  revalidateStorefront(slug);
+  return { ok: true as const };
+}
+
+// ── Variants ───────────────────────────────────────────────────────────────
+export async function addVariant(slug: string, productId: string, input: { label: string; sku: string; price_inr: number | null; stock: number }) {
+  const sb = await createClient();
+  const { error } = await sb.from("product_variants").insert({
+    product_id: productId,
+    label: input.label || "Variant",
+    sku: input.sku || null,
+    price_inr: input.price_inr,
+    stock: Math.max(0, Math.floor(input.stock || 0)),
+  });
+  if (error) return { error: error.message };
+  await recomputeProductStock(createAdminClient(), productId);
+  await logAdminAction("variant.add", "product", slug, { label: input.label });
+  revalidateStorefront(slug);
+  return { ok: true as const };
+}
+
+export async function updateVariant(variantId: string, slug: string, productId: string, input: { label: string; sku: string; price_inr: number | null; is_active: boolean }) {
+  const sb = await createClient();
+  const { error } = await sb.from("product_variants").update({
+    label: input.label || "Variant",
+    sku: input.sku || null,
+    price_inr: input.price_inr,
+    is_active: input.is_active,
+  }).eq("id", variantId);
+  if (error) return { error: error.message };
+  await recomputeProductStock(createAdminClient(), productId);
+  revalidateStorefront(slug);
+  return { ok: true as const };
+}
+
+export async function deleteVariant(variantId: string, slug: string, productId: string) {
+  const sb = await createClient();
+  const { error } = await sb.from("product_variants").delete().eq("id", variantId);
+  if (error) {
+    if (error.code === "23503") return { error: "This variant is in an order. Deactivate it instead." };
+    return { error: error.message };
+  }
+  await recomputeProductStock(createAdminClient(), productId);
+  revalidateStorefront(slug);
+  return { ok: true as const };
+}
+
+export async function adjustVariantStock(variantId: string, slug: string, productId: string, delta: number, reason: string, note: string) {
+  const supa = await createClient();
+  const { data: isAdmin } = await supa.rpc("is_admin");
+  if (!isAdmin) return { error: "Not authorized." };
+  const { data: { user } } = await supa.auth.getUser();
+  await applyStockMovement(createAdminClient(), {
+    variantId,
+    productId,
+    delta: Math.floor(delta),
+    reason: reason as StockMovementInput["reason"],
+    note: note || undefined,
+    actorEmail: user?.email ?? undefined,
+  });
+  await logAdminAction("stock.adjust", "variant", variantId, { delta, reason });
   revalidateStorefront(slug);
   return { ok: true as const };
 }

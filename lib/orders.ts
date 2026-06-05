@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { computeGstFromInclusive, DEFAULT_GST_RATE } from "@/lib/tax";
 import { sendOrderConfirmation } from "@/lib/email";
 import { createShiprocketOrder } from "@/lib/shipping/shiprocket";
+import { applyStockMovement, defaultVariant } from "@/lib/stock";
 
 export interface CheckoutItem {
   slug: string;
@@ -145,8 +146,12 @@ export async function createOrder(
     .single();
   if (orderErr || !order) throw new Error("Could not create order");
 
-  await sb.from("order_items").insert(
-    lines.map((l) => ({
+  // attach the default variant per line (the storefront sells at product level
+  // until the variant picker ships; multi-variant products default to variant 1)
+  const itemsToInsert = [];
+  for (const l of lines) {
+    const v = await defaultVariant(sb, l.p.id);
+    itemsToInsert.push({
       order_id: order.id,
       product_id: l.p.id,
       product_name: l.p.name,
@@ -155,8 +160,11 @@ export async function createOrder(
       hsn_code: l.p.hsn_code,
       gst_rate: l.p.gst_rate,
       line_total_inr: l.lineTotal,
-    })),
-  );
+      variant_id: v?.id ?? null,
+      variant_label: v?.label ?? null,
+    });
+  }
+  await sb.from("order_items").insert(itemsToInsert);
 
   if (input.paymentMethod === "cod") {
     await finalizeOrder(order.id);
@@ -198,8 +206,9 @@ export async function markOrderPaid(
   return { ok: true };
 }
 
-// Creates the invoice (idempotent) + best-effort side effects (email, shipping).
-async function finalizeOrder(orderId: string): Promise<void> {
+// Creates the invoice (idempotent) + decrements variant stock + best-effort
+// side effects (email, shipping). Exported so manual orders reuse it.
+export async function finalizeOrder(orderId: string): Promise<void> {
   const sb = createAdminClient();
   const { data: order } = await sb
     .from("orders")
@@ -235,22 +244,24 @@ async function finalizeOrder(orderId: string): Promise<void> {
     });
   }
 
-  // Decrement stock — the "ticker". Runs once per order (finalizeOrder only
-  // fires on the pending->paid / cod transition). When stock hits 0 the product
-  // shows sold-out on its own (storefront derives soldOut from stock <= 0).
+  // Decrement variant stock via the ledger — one pool, logged, no overselling.
+  // Runs once per order (finalizeOrder only fires on the pending->paid / cod
+  // transition). The product mirror (products.stock) is recomputed inside.
   const { data: stockItems } = await sb
     .from("order_items")
-    .select("product_id,qty")
+    .select("product_id,variant_id,qty")
     .eq("order_id", orderId);
   for (const it of stockItems ?? []) {
-    const { data: p } = await sb
-      .from("products")
-      .select("stock")
-      .eq("id", it.product_id)
-      .maybeSingle();
-    if (p) {
-      const next = Math.max(0, Number(p.stock) - Number(it.qty));
-      await sb.from("products").update({ stock: next }).eq("id", it.product_id);
+    const variantId = it.variant_id ?? (await defaultVariant(sb, it.product_id))?.id;
+    if (variantId) {
+      await applyStockMovement(sb, {
+        variantId,
+        productId: it.product_id,
+        delta: -Number(it.qty),
+        reason: "sale",
+        source: order.source ?? "website",
+        orderId,
+      });
     }
   }
 

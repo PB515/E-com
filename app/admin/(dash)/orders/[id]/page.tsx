@@ -71,7 +71,7 @@ export default async function AdminOrderDetailPage({
         <ul className="mt-3 divide-y divide-border text-sm">
           {(items ?? []).map((it: any) => (
             <li key={it.id} className="flex justify-between gap-3 py-3">
-              <span className="text-ink-muted">{it.product_name} &times; {it.qty} <span className="text-ink-muted/60">· HSN {it.hsn_code} @ {it.gst_rate}%</span></span>
+              <span className="text-ink-muted">{it.product_name}{it.variant_label && it.variant_label !== "Standard" ? ` (${it.variant_label})` : ""} &times; {it.qty} <span className="text-ink-muted/60">· HSN {it.hsn_code} @ {it.gst_rate}%</span></span>
               <span className="text-ink">{inr(it.line_total_inr)}</span>
             </li>
           ))}

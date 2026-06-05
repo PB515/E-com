@@ -75,12 +75,12 @@ export default function ProductEditor({ product }: { product: any }) {
         <label className={labelClass}>Name</label>
         <input value={String(f.name)} onChange={set("name")} className={inputClass} />
       </div>
-      <div className="grid grid-cols-2 gap-5 sm:grid-cols-4">
+      <div className="grid grid-cols-3 gap-5">
         <div><label className={labelClass}>Price (₹)</label><input type="number" value={String(f.price_inr)} onChange={set("price_inr")} className={inputClass} /></div>
-        <div><label className={labelClass}>Stock</label><input type="number" value={String(f.stock)} onChange={set("stock")} className={inputClass} /></div>
         <div><label className={labelClass}>HSN</label><input value={String(f.hsn_code)} onChange={set("hsn_code")} className={inputClass} /></div>
         <div><label className={labelClass}>GST %</label><input type="number" step="0.01" value={String(f.gst_rate)} onChange={set("gst_rate")} className={inputClass} /></div>
       </div>
+      <p className="-mt-2 text-xs text-ink-muted">Stock is managed per variant in the Variants section above.</p>
       <label className="flex items-center gap-3 text-sm text-ink">
         <input type="checkbox" checked={Boolean(f.is_active)} onChange={(e) => setF((s) => ({ ...s, is_active: e.target.checked }))} />
         Active (visible in the shop)

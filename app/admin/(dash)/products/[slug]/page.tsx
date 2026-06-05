@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import ProductEditor from "@/components/admin/ProductEditor";
 import ProductGallery from "@/components/admin/ProductGallery";
+import ProductVariants from "@/components/admin/ProductVariants";
 import ProductDangerActions from "@/components/admin/ProductDangerActions";
 import { scoreProduct } from "@/lib/completeness";
 
@@ -23,6 +24,12 @@ export default async function AdminProductEditPage({
     .select("id,url,is_primary")
     .eq("product_id", product.id)
     .order("is_primary", { ascending: false })
+    .order("sort_order");
+
+  const { data: variants } = await sb
+    .from("product_variants")
+    .select("id,label,sku,price_inr,stock,is_active")
+    .eq("product_id", product.id)
     .order("sort_order");
 
   const comp = scoreProduct(product, (images?.length ?? 0) > 0);
@@ -49,6 +56,14 @@ export default async function AdminProductEditPage({
         <h2 className="font-heading text-lg text-ink">Images</h2>
         <div className="mt-4">
           <ProductGallery slug={product.slug} images={images ?? []} />
+        </div>
+      </div>
+
+      <div className="mt-6 rounded-2xl border border-border bg-surface p-5">
+        <h2 className="font-heading text-lg text-ink">Variants & stock</h2>
+        <p className="mt-1 text-sm text-ink-muted">Stock lives on variants; the product total is their sum. Every adjustment is logged.</p>
+        <div className="mt-4">
+          <ProductVariants slug={product.slug} productId={product.id} variants={variants ?? []} />
         </div>
       </div>
 

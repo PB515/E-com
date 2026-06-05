@@ -44,7 +44,12 @@ export default async function AdminOrdersPage({
 
   return (
     <div>
-      <h1 className="font-heading text-3xl text-ink">Orders</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="font-heading text-3xl text-ink">Orders</h1>
+        <Link href="/admin/orders/create" className="rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-ink hover:bg-ink">
+          + Create order
+        </Link>
+      </div>
 
       <form className="mt-6 flex flex-wrap gap-3" method="get">
         <input name="q" defaultValue={q} placeholder="Search order number…" className="min-w-[180px] flex-1 rounded-full border border-border bg-surface-2 px-4 py-2 text-sm text-ink placeholder:text-ink-muted/70" />
