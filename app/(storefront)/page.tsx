@@ -4,6 +4,7 @@ import CollectionRails from "@/components/home/CollectionRails";
 import FeaturedPieces from "@/components/home/FeaturedPieces";
 import HeritageStrip from "@/components/home/HeritageStrip";
 import TrustStrip from "@/components/home/TrustStrip";
+import InstagramSection from "@/components/home/InstagramSection";
 import NewsletterBand from "@/components/site/NewsletterBand";
 import { getHomeContent } from "@/lib/site-content";
 
@@ -28,6 +29,7 @@ export default async function Home() {
       <CollectionRails />
       <FeaturedPieces title={c.featuredTitle} />
       <HeritageStrip />
+      <InstagramSection />
       <TrustStrip items={c.trust} />
       <NewsletterBand title={c.newsletterTitle} subtitle={c.newsletterSubtitle} />
     </>
