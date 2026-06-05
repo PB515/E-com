@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { logAdminAction } from "@/lib/audit";
 
 export interface ProductFields {
   name: string;
@@ -19,6 +20,12 @@ export interface ProductFields {
   material: string;
   size: string;
   care: string;
+  seo_title: string;
+  seo_description: string;
+  weight_grams: number | null;
+  length_cm: number | null;
+  breadth_cm: number | null;
+  height_cm: number | null;
 }
 
 const CATEGORIES = ["ear-cuffs", "earrings", "bracelets", "hasli", "pendants"];
@@ -41,6 +48,7 @@ export async function updateProduct(slug: string, fields: ProductFields) {
     .update({ ...fields, updated_at: new Date().toISOString() })
     .eq("slug", slug);
   if (error) return { error: error.message };
+  await logAdminAction("product.update", "product", slug, { price: fields.price_inr, stock: fields.stock });
   revalidateStorefront(slug);
   return { ok: true as const };
 }
@@ -74,11 +82,18 @@ export async function createProduct(input: CreateProductInput) {
     material: input.material,
     size: input.size,
     care: input.care,
+    seo_title: input.seo_title || null,
+    seo_description: input.seo_description || null,
+    weight_grams: input.weight_grams,
+    length_cm: input.length_cm,
+    breadth_cm: input.breadth_cm,
+    height_cm: input.height_cm,
     images: 1,
   });
   if (error) {
     return { error: error.code === "23505" ? "That slug already exists." : error.message };
   }
+  await logAdminAction("product.create", "product", slug, { name: input.name });
   revalidateStorefront(slug);
   return { ok: true as const, slug };
 }
@@ -92,6 +107,7 @@ export async function deleteProduct(slug: string) {
       return { error: "This product is in an order. Deactivate it instead of deleting." };
     return { error: error.message };
   }
+  await logAdminAction("product.delete", "product", slug);
   revalidateStorefront();
   return { ok: true as const };
 }
@@ -103,6 +119,7 @@ export async function setStock(slug: string, stock: number) {
     .update({ stock: Math.max(0, Math.floor(stock)) })
     .eq("slug", slug);
   if (error) return { error: error.message };
+  await logAdminAction("product.stock", "product", slug, { stock });
   revalidateStorefront(slug);
   return { ok: true as const };
 }

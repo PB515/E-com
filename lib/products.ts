@@ -28,6 +28,8 @@ interface ProductRow {
   images: number;
   stock: number;
   featured: boolean;
+  seo_title?: string | null;
+  seo_description?: string | null;
   product_images?: ProductImageRow[] | null;
 }
 
@@ -60,6 +62,8 @@ function mapRow(r: ProductRow): Product {
     featured: r.featured,
     gallery: galleryUrls(r.product_images),
     imageUrl: galleryUrls(r.product_images)[0],
+    seoTitle: r.seo_title ?? undefined,
+    seoDescription: r.seo_description ?? undefined,
   };
 }
 

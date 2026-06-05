@@ -45,6 +45,8 @@ export interface Product {
   featured?: boolean;
   imageUrl?: string; // primary product image (Supabase Storage), if uploaded
   gallery?: string[]; // all product images, primary first
+  seoTitle?: string;
+  seoDescription?: string;
 }
 
 export function getCategory(slug: string): Category | undefined {

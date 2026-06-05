@@ -19,8 +19,10 @@ export async function generateMetadata({
   const product = await getProductBySlug(slug);
   if (!product) return { title: "Not found" };
   return {
-    title: product.name,
-    description: `${product.name} in oxidised German silver. ${product.motif} motif from ${product.region}. ${formatInr(product.priceInr)} incl. GST.`,
+    title: product.seoTitle || product.name,
+    description:
+      product.seoDescription ||
+      `${product.name} in oxidised German silver. ${product.motif} motif from ${product.region}. ${formatInr(product.priceInr)} incl. GST.`,
   };
 }
 

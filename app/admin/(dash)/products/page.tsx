@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { formatInr, CATEGORIES } from "@/lib/catalog";
+import { scoreProduct } from "@/lib/completeness";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +26,7 @@ export default async function AdminProductsPage({
   const sb = await createClient();
   let query = sb
     .from("products")
-    .select("slug,name,category,price_inr,stock,is_active, product_images(url,is_primary)");
+    .select("*, product_images(url,is_primary)");
   if (q) query = query.ilike("name", `%${q}%`);
   if (category) query = query.eq("category", category);
   if (status === "live") query = query.eq("is_active", true).gt("stock", 0);
@@ -77,6 +78,7 @@ export default async function AdminProductsPage({
               <th className="px-4 py-3 text-right">Price</th>
               <th className="px-4 py-3 text-right">Stock</th>
               <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3 text-right">Quality</th>
               <th className="px-4 py-3"></th>
             </tr>
           </thead>
@@ -85,6 +87,8 @@ export default async function AdminProductsPage({
               const url = primary(p);
               const soldOut = p.stock <= 0;
               const low = p.is_active && p.stock > 0 && p.stock <= 5;
+              const comp = scoreProduct(p, !!url);
+              const compColor = comp.score >= 80 ? "text-success" : comp.score >= 50 ? "text-warning" : "text-error";
               return (
                 <tr key={p.slug} className={`border-t border-border ${low ? "bg-warning/5" : ""}`}>
                   <td className="px-4 py-2">
@@ -106,6 +110,7 @@ export default async function AdminProductsPage({
                       : soldOut ? <span className="text-warning">Sold out</span>
                       : <span className="text-success">Live</span>}
                   </td>
+                  <td className={`px-4 py-3 text-right ${compColor}`} title={`${comp.passed}/${comp.total} complete`}>{comp.score}%</td>
                   <td className="px-4 py-3 text-right">
                     <Link href={`/admin/products/${p.slug}`} className="text-primary hover:underline">Edit</Link>
                   </td>
@@ -113,7 +118,7 @@ export default async function AdminProductsPage({
               );
             })}
             {(data ?? []).length === 0 ? (
-              <tr><td colSpan={7} className="px-4 py-6 text-center text-ink-muted">No products match.</td></tr>
+              <tr><td colSpan={8} className="px-4 py-6 text-center text-ink-muted">No products match.</td></tr>
             ) : null}
           </tbody>
         </table>

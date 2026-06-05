@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { logAdminAction } from "@/lib/audit";
 
 export interface TaxSettingsInput {
   business_name: string;
@@ -26,6 +27,7 @@ export async function updateTaxSettings(input: TaxSettingsInput) {
     })
     .eq("id", 1);
   if (error) return { error: error.message };
+  await logAdminAction("tax.update", "tax_settings", "1", { gst_rate: input.default_gst_rate, gstin: input.gstin.trim() ? "set" : "blank" });
   revalidatePath("/admin/tax-settings");
   return { ok: true as const };
 }

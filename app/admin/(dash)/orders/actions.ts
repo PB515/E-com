@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createShiprocketOrder } from "@/lib/shipping/shiprocket";
+import { logAdminAction } from "@/lib/audit";
 
 export type OrderStatus =
   | "packed"
@@ -27,6 +28,7 @@ export async function updateOrderStatus(
 
   const { error } = await sb.from("orders").update(patch).eq("id", orderId);
   if (error) return { error: error.message };
+  await logAdminAction(`order.${status}`, "order", orderId, opts?.tracking ? { tracking: opts.tracking } : undefined);
   revalidatePath(`/admin/orders/${orderId}`);
   revalidatePath("/admin/orders");
   return { ok: true as const };

@@ -42,6 +42,8 @@ export default function NewProductForm() {
       is_active: f.is_active, featured: f.featured,
       motif: f.motif, region: f.region, occasion: f.occasion, story: f.story,
       material: f.material, size: f.size, care: f.care,
+      seo_title: "", seo_description: "",
+      weight_grams: null, length_cm: null, breadth_cm: null, height_cm: null,
     });
     setBusy(false);
     if ("error" in r && r.error) { setMsg(r.error); return; }

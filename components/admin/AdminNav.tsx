@@ -8,6 +8,8 @@ const links = [
   { href: "/admin/tax-settings", label: "Tax settings" },
   { href: "/admin/invoices", label: "Invoices" },
   { href: "/admin/returns", label: "Returns" },
+  { href: "/admin/launch", label: "Launch" },
+  { href: "/admin/audit", label: "Activity" },
 ];
 
 export default function AdminNav({ email }: { email?: string }) {

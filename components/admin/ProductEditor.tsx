@@ -24,6 +24,12 @@ export default function ProductEditor({ product }: { product: any }) {
     material: product.material ?? "",
     size: product.size ?? "",
     care: product.care ?? "",
+    seo_title: product.seo_title ?? "",
+    seo_description: product.seo_description ?? "",
+    weight_grams: product.weight_grams != null ? String(product.weight_grams) : "",
+    length_cm: product.length_cm != null ? String(product.length_cm) : "",
+    breadth_cm: product.breadth_cm != null ? String(product.breadth_cm) : "",
+    height_cm: product.height_cm != null ? String(product.height_cm) : "",
   });
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
@@ -49,6 +55,12 @@ export default function ProductEditor({ product }: { product: any }) {
       material: String(f.material),
       size: String(f.size),
       care: String(f.care),
+      seo_title: String(f.seo_title),
+      seo_description: String(f.seo_description),
+      weight_grams: f.weight_grams ? Number(f.weight_grams) : null,
+      length_cm: f.length_cm ? Number(f.length_cm) : null,
+      breadth_cm: f.breadth_cm ? Number(f.breadth_cm) : null,
+      height_cm: f.height_cm ? Number(f.height_cm) : null,
     };
     const r = await updateProduct(product.slug, fields);
     setBusy(false);
@@ -87,6 +99,25 @@ export default function ProductEditor({ product }: { product: any }) {
         <div><label className={labelClass}>Size</label><input value={String(f.size)} onChange={set("size")} className={inputClass} /></div>
         <div><label className={labelClass}>Care</label><input value={String(f.care)} onChange={set("care")} className={inputClass} /></div>
       </div>
+
+      <div className="border-t border-border pt-5">
+        <h3 className="font-heading text-lg text-ink">Shipping (used by Shiprocket)</h3>
+        <div className="mt-4 grid grid-cols-2 gap-5 sm:grid-cols-4">
+          <div><label className={labelClass}>Weight (g)</label><input type="number" value={String(f.weight_grams)} onChange={set("weight_grams")} className={inputClass} /></div>
+          <div><label className={labelClass}>Length (cm)</label><input type="number" value={String(f.length_cm)} onChange={set("length_cm")} className={inputClass} /></div>
+          <div><label className={labelClass}>Breadth (cm)</label><input type="number" value={String(f.breadth_cm)} onChange={set("breadth_cm")} className={inputClass} /></div>
+          <div><label className={labelClass}>Height (cm)</label><input type="number" value={String(f.height_cm)} onChange={set("height_cm")} className={inputClass} /></div>
+        </div>
+      </div>
+
+      <div className="border-t border-border pt-5">
+        <h3 className="font-heading text-lg text-ink">SEO</h3>
+        <div className="mt-4 flex flex-col gap-5">
+          <div><label className={labelClass}>SEO title <span className="text-ink-muted">(defaults to the product name)</span></label><input value={String(f.seo_title)} onChange={set("seo_title")} className={inputClass} placeholder={String(f.name)} /></div>
+          <div><label className={labelClass}>SEO meta description</label><textarea rows={2} value={String(f.seo_description)} onChange={set("seo_description")} className={inputClass} placeholder="155 characters, shown in search results" /></div>
+        </div>
+      </div>
+
       <div>
         <button type="submit" disabled={busy} className="rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-ink hover:bg-ink disabled:opacity-60">
           {busy ? "Saving…" : "Save product"}

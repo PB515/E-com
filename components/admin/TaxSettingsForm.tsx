@@ -31,6 +31,13 @@ export default function TaxSettingsForm({ initial }: { initial: any }) {
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    // danger-zone: confirm changes to the rate or GSTIN (affects future invoices)
+    const rateChanged = String(initial?.default_gst_rate ?? "") !== String(f.default_gst_rate);
+    const gstinChanged = String(initial?.gstin ?? "") !== String(f.gstin);
+    if (rateChanged || gstinChanged) {
+      const what = [rateChanged ? "GST rate" : "", gstinChanged ? "GSTIN" : ""].filter(Boolean).join(" and ");
+      if (!confirm(`You are changing the ${what}. This affects all FUTURE invoices (past invoices are unchanged). Continue?`)) return;
+    }
     setBusy(true);
     setMsg("");
     const r = await updateTaxSettings({

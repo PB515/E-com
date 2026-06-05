@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { logAdminAction } from "@/lib/audit";
 
 // Approve a return -> issue a credit note that REVERSES the GST (Billing & GST
 // module). The reversed amounts come from the order's snapshot, not recomputed.
@@ -32,6 +33,7 @@ export async function approveReturn(returnId: string) {
   }
 
   await sb.from("return_requests").update({ status: "approved", reviewed_at: new Date().toISOString() }).eq("id", returnId);
+  await logAdminAction("return.approve", "return", returnId, { order: rr.order_number });
   revalidatePath("/admin/returns");
   return { ok: true as const, hadOrder: !!order };
 }
