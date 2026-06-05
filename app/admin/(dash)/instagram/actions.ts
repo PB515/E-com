@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAdminAction } from "@/lib/audit";
+import { syncInstagram } from "@/lib/instagram-sync";
 
 function revalidateStore() {
   revalidatePath("/", "layout");
@@ -68,6 +69,18 @@ export async function deleteInstagramPost(id: string) {
   await logAdminAction("instagram.delete", "instagram", id);
   revalidateStore();
   return { ok: true as const };
+}
+
+// Pull recent posts from the connected Instagram account (Meta Graph API).
+export async function syncInstagramNow() {
+  const supa = await createClient();
+  const { data: isAdmin } = await supa.rpc("is_admin");
+  if (!isAdmin) return { error: "Not authorized." };
+  const r = await syncInstagram(12);
+  if (!r.ok) return { error: r.error };
+  await logAdminAction("instagram.sync", "instagram", "feed", { synced: r.synced });
+  revalidateStore();
+  return { ok: true as const, synced: r.synced ?? 0, skipped: r.skipped ?? 0 };
 }
 
 export async function uploadInstagramImage(id: string, formData: FormData) {
