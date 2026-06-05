@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { CATEGORIES } from "@/lib/catalog";
 import { getAllProducts } from "@/lib/products";
+import { getPublicTaxMode } from "@/lib/tax-settings";
 import ProductCard from "@/components/shop/ProductCard";
 import NewsletterBand from "@/components/site/NewsletterBand";
 import Reveal from "@/components/site/Reveal";
@@ -16,6 +17,7 @@ export const metadata: Metadata = {
 
 export default async function ShopPage() {
   const products = await getAllProducts();
+  const showGst = (await getPublicTaxMode()) === "gst";
   return (
     <>
       <section className="mx-auto max-w-[1400px] px-5 pb-2 pt-12 sm:px-8 lg:pt-16">
@@ -41,7 +43,7 @@ export default async function ShopPage() {
         <div className="grid grid-cols-2 gap-x-4 gap-y-10 lg:grid-cols-4">
           {products.map((p, i) => (
             <Reveal key={p.slug} trigger="view" delay={(i % 4) * 0.05}>
-              <ProductCard product={p} />
+              <ProductCard product={p} showGst={showGst} />
             </Reveal>
           ))}
         </div>

@@ -16,6 +16,18 @@
 export const DEFAULT_GST_RATE = 12; // percent, CA-confirmed
 export const DEFAULT_HSN = "7117";
 
+/**
+ * Business tax registration status. NOT a casual on/off:
+ *  - "gst": Bugadi has a GSTIN. GST is computed, split, and shown; documents are
+ *    GST tax invoices.
+ *  - "unregistered": Bugadi is below/outside GST registration. NO GST is charged
+ *    or shown; documents are plain retail receipts with a "not a tax invoice"
+ *    note. The mode is SNAPSHOTTED onto each order so past documents never change
+ *    when the business later registers.
+ */
+export type TaxMode = "gst" | "unregistered";
+export const DEFAULT_TAX_MODE: TaxMode = "gst";
+
 export interface TaxBreakdown {
   ratePct: number;
   isIntraState: boolean;
@@ -88,4 +100,42 @@ export function computeGstFromInclusive(
     totalTax,
     grandTotal: round2(inclusiveTotal),
   };
+}
+
+/**
+ * No-GST breakdown for the UNREGISTERED mode: the price stands alone, nothing is
+ * treated as tax. taxableValue == grandTotal == the price; all GST parts are 0.
+ */
+export function noTaxBreakdown(total: number): TaxBreakdown {
+  const t = round2(total);
+  return {
+    ratePct: 0,
+    isIntraState: false,
+    taxableValue: t,
+    cgst: 0,
+    sgst: 0,
+    igst: 0,
+    totalTax: 0,
+    grandTotal: t,
+  };
+}
+
+/**
+ * Single entry point used by checkout + manual orders. Picks GST or no-GST by
+ * the business tax mode, so callers never branch on it themselves.
+ */
+export function computeOrderTax(opts: {
+  mode: TaxMode;
+  inclusiveTotal: number;
+  ratePct: number;
+  buyerState: string;
+  sellerState: string;
+}): TaxBreakdown {
+  if (opts.mode === "unregistered") return noTaxBreakdown(opts.inclusiveTotal);
+  return computeGstFromInclusive(opts.inclusiveTotal, opts.ratePct, opts.buyerState, opts.sellerState);
+}
+
+/** Normalise a raw tax_settings.tax_mode value to a known TaxMode. */
+export function asTaxMode(v: unknown): TaxMode {
+  return v === "unregistered" ? "unregistered" : "gst";
 }

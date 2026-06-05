@@ -6,11 +6,15 @@ export const dynamic = "force-dynamic";
 
 export default async function CreateOrderPage() {
   const sb = await createClient();
-  const { data } = await sb
-    .from("products")
-    .select("id,name,price_inr, product_variants(id,label,price_inr,stock,is_active,sort_order)")
-    .eq("is_active", true)
-    .order("name");
+  const [{ data }, { data: ts }] = await Promise.all([
+    sb
+      .from("products")
+      .select("id,name,price_inr, product_variants(id,label,price_inr,stock,is_active,sort_order)")
+      .eq("is_active", true)
+      .order("name"),
+    sb.from("tax_settings").select("tax_mode").eq("id", 1).maybeSingle(),
+  ]);
+  const showGst = ts?.tax_mode !== "unregistered";
 
   const catalog = (data ?? []).map((p: any) => ({
     id: p.id,
@@ -29,7 +33,7 @@ export default async function CreateOrderPage() {
       <p className="mt-2 text-sm text-ink-muted">
         For WhatsApp / Instagram / phone / exhibition / marketplace sales. Stock deducts and the customer profile updates, just like a website order.
       </p>
-      <ManualOrderForm catalog={catalog} />
+      <ManualOrderForm catalog={catalog} showGst={showGst} />
     </div>
   );
 }

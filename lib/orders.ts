@@ -1,6 +1,6 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { computeGstFromInclusive, DEFAULT_GST_RATE } from "@/lib/tax";
+import { computeOrderTax, asTaxMode, DEFAULT_GST_RATE } from "@/lib/tax";
 import { sendOrderConfirmation } from "@/lib/email";
 import { createShiprocketOrder } from "@/lib/shipping/shiprocket";
 import { applyStockMovement, defaultVariant } from "@/lib/stock";
@@ -108,7 +108,8 @@ export async function createOrder(
     .maybeSingle();
   const sellerState = tax?.registered_state ?? "Maharashtra";
   const rate = Number(tax?.default_gst_rate ?? DEFAULT_GST_RATE);
-  const gst = computeGstFromInclusive(subtotal, rate, input.address.state, sellerState);
+  const taxMode = asTaxMode(tax?.tax_mode);
+  const gst = computeOrderTax({ mode: taxMode, inclusiveTotal: subtotal, ratePct: rate, buyerState: input.address.state, sellerState });
 
   // CRM dedupe: reuse an existing customer (by phone, then email) so repeat
   // buyers build one profile; otherwise create a new one stamped with source.
@@ -144,6 +145,7 @@ export async function createOrder(
       source: "website",
       payment_method: input.paymentMethod === "cod" ? "cod" : "razorpay",
       payment_status: input.paymentMethod === "cod" ? "pending" : "paid",
+      tax_mode: taxMode,
       place_of_supply_state: input.address.state,
       is_intra_state: gst.isIntraState,
       subtotal_inr: subtotal,
@@ -240,6 +242,7 @@ export async function finalizeOrder(orderId: string): Promise<void> {
       invoice_number: "INV-" + order.order_number,
       order_id: order.id,
       gstin: ts?.gstin ?? null,
+      tax_mode: order.tax_mode ?? "gst",
       place_of_supply_state: order.place_of_supply_state,
       is_intra_state: order.is_intra_state,
       subtotal_inr: order.subtotal_inr,

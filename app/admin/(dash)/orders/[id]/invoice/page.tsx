@@ -29,6 +29,7 @@ export default async function InvoicePage({
 
   const issued = new Date(invoice.issued_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
   const taxable = Number(order.subtotal_inr) - Number(order.total_tax_amount);
+  const noGst = (invoice.tax_mode ?? order.tax_mode) === "unregistered";
 
   return (
     <div>
@@ -43,11 +44,17 @@ export default async function InvoicePage({
           <div>
             <h1 className="text-2xl font-semibold">{tax?.business_name ?? "Bugadi"}</h1>
             <p className="text-sm text-zinc-600">Oxidised Indian jewellery</p>
-            {tax?.gstin ? <p className="mt-1 text-sm">GSTIN: {tax.gstin}</p> : <p className="mt-1 text-sm text-zinc-500">GSTIN: (to be added)</p>}
-            <p className="text-sm">State: {tax?.registered_state}</p>
+            {noGst ? (
+              <p className="mt-1 text-sm">State: {tax?.registered_state}</p>
+            ) : (
+              <>
+                {tax?.gstin ? <p className="mt-1 text-sm">GSTIN: {tax.gstin}</p> : <p className="mt-1 text-sm text-zinc-500">GSTIN: (to be added)</p>}
+                <p className="text-sm">State: {tax?.registered_state}</p>
+              </>
+            )}
           </div>
           <div className="text-right">
-            <p className="text-lg font-semibold">TAX INVOICE</p>
+            <p className="text-lg font-semibold">{noGst ? "RETAIL INVOICE" : "TAX INVOICE"}</p>
             <p className="text-sm">{invoice.invoice_number}</p>
             <p className="text-sm text-zinc-600">{issued}</p>
             <p className="text-sm text-zinc-600">Order {order.order_number}</p>
@@ -73,7 +80,7 @@ export default async function InvoicePage({
           <thead>
             <tr className="border-b-2 border-zinc-300 text-left">
               <th className="py-2">Item</th>
-              <th className="py-2">HSN</th>
+              {noGst ? null : <th className="py-2">HSN</th>}
               <th className="py-2 text-right">Qty</th>
               <th className="py-2 text-right">Rate</th>
               <th className="py-2 text-right">Amount</th>
@@ -82,8 +89,8 @@ export default async function InvoicePage({
           <tbody>
             {(items ?? []).map((it: any) => (
               <tr key={it.id} className="border-b border-zinc-200">
-                <td className="py-2">{it.product_name}</td>
-                <td className="py-2">{it.hsn_code}</td>
+                <td className="py-2">{it.product_name}{it.variant_label && it.variant_label !== "Standard" ? ` (${it.variant_label})` : ""}</td>
+                {noGst ? null : <td className="py-2">{it.hsn_code}</td>}
                 <td className="py-2 text-right">{it.qty}</td>
                 <td className="py-2 text-right">{inr(it.unit_price_inr)}</td>
                 <td className="py-2 text-right">{inr(it.line_total_inr)}</td>
@@ -94,23 +101,34 @@ export default async function InvoicePage({
 
         <div className="mt-4 flex justify-end">
           <dl className="w-64 text-sm">
-            <div className="flex justify-between py-1"><dt className="text-zinc-600">Taxable value</dt><dd>{inr(taxable)}</dd></div>
-            {order.is_intra_state ? (
+            {noGst ? null : (
               <>
-                <div className="flex justify-between py-1"><dt className="text-zinc-600">CGST</dt><dd>{inr(order.cgst_amount)}</dd></div>
-                <div className="flex justify-between py-1"><dt className="text-zinc-600">SGST</dt><dd>{inr(order.sgst_amount)}</dd></div>
+                <div className="flex justify-between py-1"><dt className="text-zinc-600">Taxable value</dt><dd>{inr(taxable)}</dd></div>
+                {order.is_intra_state ? (
+                  <>
+                    <div className="flex justify-between py-1"><dt className="text-zinc-600">CGST</dt><dd>{inr(order.cgst_amount)}</dd></div>
+                    <div className="flex justify-between py-1"><dt className="text-zinc-600">SGST</dt><dd>{inr(order.sgst_amount)}</dd></div>
+                  </>
+                ) : (
+                  <div className="flex justify-between py-1"><dt className="text-zinc-600">IGST</dt><dd>{inr(order.igst_amount)}</dd></div>
+                )}
               </>
-            ) : (
-              <div className="flex justify-between py-1"><dt className="text-zinc-600">IGST</dt><dd>{inr(order.igst_amount)}</dd></div>
             )}
-            <div className="mt-1 flex justify-between border-t-2 border-zinc-300 pt-2 font-semibold"><dt>Total (incl. GST)</dt><dd>{inr(order.grand_total_inr)}</dd></div>
+            <div className="mt-1 flex justify-between border-t-2 border-zinc-300 pt-2 font-semibold"><dt>Total{noGst ? "" : " (incl. GST)"}</dt><dd>{inr(order.grand_total_inr)}</dd></div>
           </dl>
         </div>
 
-        <p className="mt-8 text-xs text-zinc-500">
-          Prices are inclusive of GST. Payment: {order.payment_method === "cod" ? "Cash on delivery" : "Online (test mode)"}.
-          This is a computer-generated invoice.
-        </p>
+        {noGst ? (
+          <p className="mt-8 text-xs text-zinc-500">
+            This is not a GST tax invoice. GST has not been charged as the seller is not currently registered under GST.
+            Payment: {order.payment_method === "cod" ? "Cash on delivery" : "Online (test mode)"}. Computer-generated receipt.
+          </p>
+        ) : (
+          <p className="mt-8 text-xs text-zinc-500">
+            Prices are inclusive of GST. Payment: {order.payment_method === "cod" ? "Cash on delivery" : "Online (test mode)"}.
+            This is a computer-generated invoice.
+          </p>
+        )}
 
         {/* Packing slip — new page when printed */}
         <div className="mt-12 border-t-2 border-dashed border-zinc-300 pt-10" style={{ breakBefore: "page" }}>

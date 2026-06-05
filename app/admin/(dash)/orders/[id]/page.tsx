@@ -77,7 +77,9 @@ export default async function AdminOrderDetailPage({
           ))}
         </ul>
         <dl className="mt-4 flex flex-col gap-1.5 border-t border-border pt-4 text-sm">
-          {order.is_intra_state ? (
+          {order.tax_mode === "unregistered" ? (
+            <div className="flex justify-between text-ink-muted"><dt>GST</dt><dd>Not charged (unregistered)</dd></div>
+          ) : order.is_intra_state ? (
             <>
               <div className="flex justify-between text-ink-muted"><dt>CGST</dt><dd>{inr(order.cgst_amount)}</dd></div>
               <div className="flex justify-between text-ink-muted"><dt>SGST</dt><dd>{inr(order.sgst_amount)}</dd></div>
@@ -85,7 +87,7 @@ export default async function AdminOrderDetailPage({
           ) : (
             <div className="flex justify-between text-ink-muted"><dt>IGST</dt><dd>{inr(order.igst_amount)}</dd></div>
           )}
-          <div className="flex justify-between border-t border-border pt-2 text-ink"><dt className="font-medium">Total (incl. GST)</dt><dd className="font-medium">{inr(order.grand_total_inr)}</dd></div>
+          <div className="flex justify-between border-t border-border pt-2 text-ink"><dt className="font-medium">Total{order.tax_mode === "unregistered" ? "" : " (incl. GST)"}</dt><dd className="font-medium">{inr(order.grand_total_inr)}</dd></div>
         </dl>
       </div>
     </div>

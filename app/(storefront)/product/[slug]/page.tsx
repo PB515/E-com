@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCategory, formatInr } from "@/lib/catalog";
 import { getProductBySlug, getRelated } from "@/lib/products";
+import { getPublicTaxMode } from "@/lib/tax-settings";
 import ImageSlot from "@/components/ui/ImageSlot";
 import ProductCard from "@/components/shop/ProductCard";
 import AddToCart from "@/components/shop/AddToCart";
@@ -38,6 +39,7 @@ export default async function ProductPage({
   const category = getCategory(product.category);
   const related = await getRelated(product, 3);
   const soldOut = product.stock <= 0;
+  const showGst = (await getPublicTaxMode()) === "gst";
 
   // Product schema (doc 11). No invented reviews/ratings. Image omitted until
   // real product photography lands (06b) — TODO: add image URLs at launch.
@@ -115,6 +117,7 @@ export default async function ProductPage({
             productPrice={product.priceInr}
             productStock={product.stock}
             variants={product.variants ?? []}
+            showGst={showGst}
           />
 
           <p className="mt-6 border-t border-border pt-6 text-sm leading-relaxed text-ink-muted">
@@ -176,7 +179,7 @@ export default async function ProductPage({
           <h2 className="font-heading text-2xl text-ink sm:text-3xl">You may also like</h2>
           <div className="mt-8 grid grid-cols-2 gap-x-4 gap-y-10 lg:grid-cols-3">
             {related.map((p) => (
-              <ProductCard key={p.slug} product={p} />
+              <ProductCard key={p.slug} product={p} showGst={showGst} />
             ))}
           </div>
         </section>

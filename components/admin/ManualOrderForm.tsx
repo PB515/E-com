@@ -15,7 +15,7 @@ const SOURCES = ["whatsapp","instagram","exhibition","phone","marketplace","manu
 const ic = "w-full rounded-xl border border-border bg-surface-2 px-3 py-2 text-sm text-ink";
 const lc = "mb-1 block text-xs text-ink-muted";
 
-export default function ManualOrderForm({ catalog }: { catalog: Prod[] }) {
+export default function ManualOrderForm({ catalog, showGst = true }: { catalog: Prod[]; showGst?: boolean }) {
   const router = useRouter();
   const [cust, setCust] = useState({ name: "", phone: "", email: "" });
   const [addr, setAddr] = useState({ line1: "", line2: "", city: "", state: "", pincode: "" });
@@ -159,7 +159,7 @@ export default function ManualOrderForm({ catalog }: { catalog: Prod[] }) {
           <div className="flex justify-between text-ink-muted"><dt>Subtotal</dt><dd>{formatInr(subtotal)}</dd></div>
           <div className="flex justify-between text-ink-muted"><dt>Discount</dt><dd>- {formatInr(Number(discount||0))}</dd></div>
           <div className="flex justify-between text-ink-muted"><dt>Shipping</dt><dd>{formatInr(Number(shipping||0))}</dd></div>
-          <div className="flex justify-between border-t border-border pt-2 text-ink"><dt className="font-medium">Total (incl. GST)</dt><dd className="font-medium">{formatInr(total)}</dd></div>
+          <div className="flex justify-between border-t border-border pt-2 text-ink"><dt className="font-medium">Total{showGst ? " (incl. GST)" : ""}</dt><dd className="font-medium">{formatInr(total)}</dd></div>
         </dl>
         {err ? <p className="mt-3 text-sm text-error" role="alert">{err}</p> : null}
         <button type="submit" disabled={busy} className="mt-4 w-full rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-ink hover:bg-ink disabled:opacity-60">

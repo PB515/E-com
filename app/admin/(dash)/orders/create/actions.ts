@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { upsertCustomer, finalizeOrder } from "@/lib/orders";
-import { computeGstFromInclusive, DEFAULT_GST_RATE } from "@/lib/tax";
+import { computeOrderTax, asTaxMode, DEFAULT_GST_RATE } from "@/lib/tax";
 import { logAdminAction } from "@/lib/audit";
 
 export interface ManualLine {
@@ -63,10 +63,11 @@ export async function createManualOrder(input: ManualOrderInput) {
   const shipping = Math.max(0, Math.round(input.shippingInr || 0));
   const net = Math.max(0, subtotal - discount);
 
-  const { data: tax } = await sb.from("tax_settings").select("registered_state,default_gst_rate").eq("id", 1).maybeSingle();
+  const { data: tax } = await sb.from("tax_settings").select("registered_state,default_gst_rate,tax_mode").eq("id", 1).maybeSingle();
   const sellerState = tax?.registered_state ?? "Maharashtra";
   const rate = Number(tax?.default_gst_rate ?? DEFAULT_GST_RATE);
-  const gst = computeGstFromInclusive(net, rate, input.address.state, sellerState);
+  const taxMode = asTaxMode(tax?.tax_mode);
+  const gst = computeOrderTax({ mode: taxMode, inclusiveTotal: net, ratePct: rate, buyerState: input.address.state, sellerState });
   const grandTotal = net + shipping;
 
   const cust = await upsertCustomer(sb, { ...input.customer, source: input.source });
@@ -87,6 +88,7 @@ export async function createManualOrder(input: ManualOrderInput) {
     marketplace_order_id: input.marketplaceOrderId ?? null,
     marketplace_fee_inr: Math.max(0, Math.round(input.marketplaceFeeInr || 0)),
     internal_note: input.internalNote ?? null,
+    tax_mode: taxMode,
     place_of_supply_state: input.address.state, is_intra_state: gst.isIntraState,
     subtotal_inr: net, cgst_amount: gst.cgst, sgst_amount: gst.sgst, igst_amount: gst.igst,
     total_tax_amount: gst.totalTax, grand_total_inr: grandTotal,

@@ -23,11 +23,14 @@ const labelClass = "mb-2 block text-sm text-ink";
 export default function CheckoutClient({
   sellerState,
   gstRate,
+  taxMode,
 }: {
   sellerState: string;
   gstRate: number;
+  taxMode: "gst" | "unregistered";
 }) {
   const router = useRouter();
+  const noGst = taxMode === "unregistered";
   const { lines, subtotal, count, ready, clear } = useCart();
   const [form, setForm] = useState({
     name: "", email: "", phone: "",
@@ -38,7 +41,8 @@ export default function CheckoutClient({
   const [busy, setBusy] = useState(false);
 
   // Live GST: once a state is picked, show the actual CGST/SGST or IGST split.
-  const gst = form.state
+  // In unregistered mode there is no GST at all.
+  const gst = !noGst && form.state
     ? computeGstFromInclusive(subtotal, gstRate, form.state, sellerState)
     : null;
   const gstTotal = gstIncludedInTotal(subtotal, gstRate);
@@ -90,8 +94,10 @@ export default function CheckoutClient({
     <section className="mx-auto max-w-[1100px] px-5 py-12 sm:px-8 lg:py-16">
       <h1 className="font-heading text-4xl text-ink lg:text-5xl">Checkout</h1>
       <p className="mt-3 max-w-xl text-sm text-ink-muted">
-        Test mode: no real money moves. GST is computed from your state and shown
-        on the confirmation.
+        Test mode: no real money moves.{" "}
+        {noGst
+          ? "GST is not charged as the seller is not currently registered under GST."
+          : "GST is computed from your state and shown on the confirmation."}
       </p>
 
       <form onSubmit={onSubmit} className="mt-10 grid gap-12 lg:grid-cols-[1.5fr_1fr]">
@@ -166,23 +172,31 @@ export default function CheckoutClient({
               </li>
             ))}
           </ul>
-          <dl className="mt-6 flex flex-col gap-2 border-t border-border pt-6 text-sm">
-            <div className="flex justify-between text-ink-muted"><dt>Taxable value</dt><dd>{formatInr(subtotal - gstTotal)}</dd></div>
-            {gst ? (
-              gst.isIntraState ? (
-                <>
-                  <div className="flex justify-between text-ink-muted"><dt>CGST ({gstRate / 2}%)</dt><dd>{formatInr(gst.cgst)}</dd></div>
-                  <div className="flex justify-between text-ink-muted"><dt>SGST ({gstRate / 2}%)</dt><dd>{formatInr(gst.sgst)}</dd></div>
-                </>
+          {noGst ? (
+            <dl className="mt-6 flex flex-col gap-2 border-t border-border pt-6 text-sm">
+              <div className="flex justify-between text-ink-muted"><dt>Shipping</dt><dd>free in test mode</dd></div>
+            </dl>
+          ) : (
+            <dl className="mt-6 flex flex-col gap-2 border-t border-border pt-6 text-sm">
+              <div className="flex justify-between text-ink-muted"><dt>Taxable value</dt><dd>{formatInr(subtotal - gstTotal)}</dd></div>
+              {gst ? (
+                gst.isIntraState ? (
+                  <>
+                    <div className="flex justify-between text-ink-muted"><dt>CGST ({gstRate / 2}%)</dt><dd>{formatInr(gst.cgst)}</dd></div>
+                    <div className="flex justify-between text-ink-muted"><dt>SGST ({gstRate / 2}%)</dt><dd>{formatInr(gst.sgst)}</dd></div>
+                  </>
+                ) : (
+                  <div className="flex justify-between text-ink-muted"><dt>IGST ({gstRate}%)</dt><dd>{formatInr(gst.igst)}</dd></div>
+                )
               ) : (
-                <div className="flex justify-between text-ink-muted"><dt>IGST ({gstRate}%)</dt><dd>{formatInr(gst.igst)}</dd></div>
-              )
-            ) : (
-              <div className="flex justify-between text-ink-muted"><dt>GST ({gstRate}%, incl.)</dt><dd>{formatInr(gstTotal)}</dd></div>
-            )}
-            <div className="flex justify-between text-ink-muted"><dt>Shipping</dt><dd>free in test mode</dd></div>
-          </dl>
-          {!form.state ? (
+                <div className="flex justify-between text-ink-muted"><dt>GST ({gstRate}%, incl.)</dt><dd>{formatInr(gstTotal)}</dd></div>
+              )}
+              <div className="flex justify-between text-ink-muted"><dt>Shipping</dt><dd>free in test mode</dd></div>
+            </dl>
+          )}
+          {noGst ? (
+            <p className="mt-3 text-xs text-ink-muted/80">GST is not charged on this order.</p>
+          ) : !form.state ? (
             <p className="mt-3 text-xs text-ink-muted/80">Select your state to see the CGST/SGST or IGST split.</p>
           ) : null}
           <div className="mt-5 flex justify-between border-t border-border pt-5 text-ink">

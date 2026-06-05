@@ -12,7 +12,7 @@ export default async function CheckoutPage() {
   const sb = createAdminClient();
   const { data: ts } = await sb
     .from("tax_settings")
-    .select("registered_state,default_gst_rate")
+    .select("registered_state,default_gst_rate,tax_mode")
     .eq("id", 1)
     .maybeSingle();
 
@@ -20,6 +20,7 @@ export default async function CheckoutPage() {
     <CheckoutClient
       sellerState={ts?.registered_state ?? "Maharashtra"}
       gstRate={Number(ts?.default_gst_rate ?? DEFAULT_GST_RATE)}
+      taxMode={ts?.tax_mode === "unregistered" ? "unregistered" : "gst"}
     />
   );
 }

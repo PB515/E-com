@@ -25,6 +25,7 @@ export default async function OrderConfirmationPage({
 
   const paid = order.status === "paid";
   const cod = order.status === "cod_confirmed";
+  const noGst = order.tax_mode === "unregistered";
 
   return (
     <section className="mx-auto max-w-[760px] px-5 py-16 sm:px-8">
@@ -53,37 +54,51 @@ export default async function OrderConfirmationPage({
           ))}
         </ul>
 
-        <dl className="mt-6 flex flex-col gap-2 border-t border-border pt-6 text-sm">
-          <div className="flex justify-between text-ink-muted">
-            <dt>Taxable value</dt>
-            <dd>{inr(order.subtotal_inr - order.total_tax_amount)}</dd>
-          </div>
-          {order.is_intra_state ? (
-            <>
-              <div className="flex justify-between text-ink-muted">
-                <dt>CGST</dt>
-                <dd>{inr(order.cgst_amount)}</dd>
-              </div>
-              <div className="flex justify-between text-ink-muted">
-                <dt>SGST</dt>
-                <dd>{inr(order.sgst_amount)}</dd>
-              </div>
-            </>
-          ) : (
+        {noGst ? (
+          <dl className="mt-6 flex flex-col gap-2 border-t border-border pt-6 text-sm">
             <div className="flex justify-between text-ink-muted">
-              <dt>IGST</dt>
-              <dd>{inr(order.igst_amount)}</dd>
+              <dt>Place of supply</dt>
+              <dd>{order.place_of_supply_state}</dd>
             </div>
-          )}
-          <div className="flex justify-between text-ink-muted">
-            <dt>Place of supply</dt>
-            <dd>{order.place_of_supply_state}</dd>
-          </div>
-        </dl>
+          </dl>
+        ) : (
+          <dl className="mt-6 flex flex-col gap-2 border-t border-border pt-6 text-sm">
+            <div className="flex justify-between text-ink-muted">
+              <dt>Taxable value</dt>
+              <dd>{inr(order.subtotal_inr - order.total_tax_amount)}</dd>
+            </div>
+            {order.is_intra_state ? (
+              <>
+                <div className="flex justify-between text-ink-muted">
+                  <dt>CGST</dt>
+                  <dd>{inr(order.cgst_amount)}</dd>
+                </div>
+                <div className="flex justify-between text-ink-muted">
+                  <dt>SGST</dt>
+                  <dd>{inr(order.sgst_amount)}</dd>
+                </div>
+              </>
+            ) : (
+              <div className="flex justify-between text-ink-muted">
+                <dt>IGST</dt>
+                <dd>{inr(order.igst_amount)}</dd>
+              </div>
+            )}
+            <div className="flex justify-between text-ink-muted">
+              <dt>Place of supply</dt>
+              <dd>{order.place_of_supply_state}</dd>
+            </div>
+          </dl>
+        )}
         <div className="mt-5 flex justify-between border-t border-border pt-5 text-ink">
-          <span className="font-medium">Total (incl. GST)</span>
+          <span className="font-medium">Total{noGst ? "" : " (incl. GST)"}</span>
           <span className="font-medium">{inr(order.grand_total_inr)}</span>
         </div>
+        {noGst ? (
+          <p className="mt-4 text-xs text-ink-muted">
+            GST is not charged on this order as the seller is not currently registered under GST.
+          </p>
+        ) : null}
       </div>
 
       <p className="mt-8 text-sm leading-relaxed text-ink-muted">

@@ -15,12 +15,14 @@ export default function AddToCart({
   productPrice,
   productStock,
   variants,
+  showGst = true,
 }: {
   slug: string;
   name: string;
   productPrice: number;
   productStock: number;
   variants: ProductVariant[];
+  showGst?: boolean;
 }) {
   // Legacy products with no variant rows fall back to a single synthetic option.
   const options: ProductVariant[] =
@@ -68,7 +70,7 @@ export default function AddToCart({
       {/* selected variant price (authoritative for the buy action) */}
       <p className="mt-5 text-2xl text-ink">
         {formatInr(variant.priceInr)}{" "}
-        <span className="text-base text-ink-muted">incl. GST</span>
+        {showGst ? <span className="text-base text-ink-muted">incl. GST</span> : null}
       </p>
 
       {hasPicker ? (
@@ -167,7 +169,7 @@ export default function AddToCart({
           <div className="flex items-center justify-between gap-4">
             <span className="text-sm text-ink">
               {formatInr(variant.priceInr)}{" "}
-              <span className="text-ink-muted">{hasPicker ? variant.label : "incl. GST"}</span>
+              <span className="text-ink-muted">{hasPicker ? variant.label : showGst ? "incl. GST" : ""}</span>
             </span>
             <button
               type="button"

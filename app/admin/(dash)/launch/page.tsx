@@ -25,9 +25,12 @@ export default async function LaunchReadinessPage() {
   const total = actives.length;
 
   const provider = process.env.PAYMENT_PROVIDER || "mock";
+  const unregistered = tax?.tax_mode === "unregistered";
 
   const auto: Row[] = [
-    { label: "GSTIN added", ok: !!tax?.gstin, note: tax?.gstin ? tax.gstin : "Add it in Tax settings" },
+    unregistered
+      ? { label: "Tax mode set", ok: true, note: "Unregistered (small seller) — no GSTIN required" }
+      : { label: "GSTIN added", ok: !!tax?.gstin, note: tax?.gstin ? tax.gstin : "Add it in Tax settings" },
     { label: "Live payments (Razorpay)", ok: provider === "razorpay", note: provider === "razorpay" ? "Razorpay is live" : "Currently mock/test (PAYMENT_PROVIDER=mock)" },
     { label: "Email configured (Resend)", ok: !!process.env.RESEND_API_KEY, note: process.env.RESEND_API_KEY ? "Key present" : "Set RESEND_API_KEY" },
     { label: "Shipping configured (Shiprocket)", ok: !!process.env.SHIPROCKET_EMAIL, note: process.env.SHIPROCKET_EMAIL ? "Credentials present" : "Set Shiprocket credentials" },
@@ -39,7 +42,7 @@ export default async function LaunchReadinessPage() {
   const manual: Row[] = [
     { label: "Real product photos uploaded", ok: !!flags.real_photos, note: "Swap placeholders for real shots", manualKey: "real_photos" },
     { label: "Privacy policy reviewed", ok: !!flags.privacy_reviewed, note: "Matches deployed analytics (DPDP)", manualKey: "privacy_reviewed" },
-    { label: "CA verified a sample invoice", ok: !!flags.ca_verified, note: "One intra-state + one inter-state", manualKey: "ca_verified" },
+    { label: unregistered ? "CA confirmed receipt wording" : "CA verified a sample invoice", ok: !!flags.ca_verified, note: unregistered ? "Retail receipt + \"not a tax invoice\" note" : "One intra-state + one inter-state", manualKey: "ca_verified" },
     { label: "Shiprocket pickup location set", ok: !!flags.pickup_set, note: "Needed for real labels", manualKey: "pickup_set" },
   ];
 

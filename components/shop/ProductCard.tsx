@@ -4,7 +4,7 @@ import ImageSlot from "@/components/ui/ImageSlot";
 
 // One product card, reused across category grid, related, and the home rail
 // (skill: one component, no three-inconsistent-cards).
-export default function ProductCard({ product }: { product: Product }) {
+export default function ProductCard({ product, showGst = true }: { product: Product; showGst?: boolean }) {
   const soldOut = product.stock <= 0;
   return (
     <Link href={`/product/${product.slug}`} className="group block">
@@ -28,7 +28,7 @@ export default function ProductCard({ product }: { product: Product }) {
         </p>
         <p className="mt-1 text-sm text-ink">
           {formatInr(product.priceInr)}{" "}
-          <span className="text-ink-muted">incl. GST</span>
+          {showGst ? <span className="text-ink-muted">incl. GST</span> : null}
         </p>
       </div>
     </Link>

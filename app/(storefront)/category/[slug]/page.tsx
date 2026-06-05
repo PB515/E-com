@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getCategory } from "@/lib/catalog";
 import { getProductsByCategory } from "@/lib/products";
+import { getPublicTaxMode } from "@/lib/tax-settings";
 import ProductCard from "@/components/shop/ProductCard";
 import NewsletterBand from "@/components/site/NewsletterBand";
 import Reveal from "@/components/site/Reveal";
@@ -30,6 +31,7 @@ export default async function CategoryPage({
   if (!category) notFound();
 
   const products = await getProductsByCategory(slug);
+  const showGst = (await getPublicTaxMode()) === "gst";
 
   return (
     <>
@@ -51,7 +53,7 @@ export default async function CategoryPage({
           <div className="grid grid-cols-2 gap-x-4 gap-y-10 lg:grid-cols-4">
             {products.map((p, i) => (
               <Reveal key={p.slug} trigger="view" delay={(i % 4) * 0.05}>
-                <ProductCard product={p} />
+                <ProductCard product={p} showGst={showGst} />
               </Reveal>
             ))}
           </div>

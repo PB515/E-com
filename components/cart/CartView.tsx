@@ -7,7 +7,7 @@ import { formatInr } from "@/lib/catalog";
 import { gstIncludedInTotal, DEFAULT_GST_RATE } from "@/lib/tax";
 import ImageSlot from "@/components/ui/ImageSlot";
 
-export default function CartView() {
+export default function CartView({ showGst = true }: { showGst?: boolean }) {
   const { lines, subtotal, count, ready, changeQty, remove } = useCart();
   const gst = gstIncludedInTotal(subtotal, DEFAULT_GST_RATE);
 
@@ -112,19 +112,27 @@ export default function CartView() {
               <dt>Subtotal</dt>
               <dd>{formatInr(subtotal)}</dd>
             </div>
-            <div className="flex justify-between text-ink-muted">
-              <dt>GST ({DEFAULT_GST_RATE}%, incl.)</dt>
-              <dd>{formatInr(gst)}</dd>
-            </div>
+            {showGst ? (
+              <div className="flex justify-between text-ink-muted">
+                <dt>GST ({DEFAULT_GST_RATE}%, incl.)</dt>
+                <dd>{formatInr(gst)}</dd>
+              </div>
+            ) : null}
             <div className="flex justify-between text-ink-muted">
               <dt>Shipping</dt>
               <dd>calculated at checkout</dd>
             </div>
           </dl>
-          <p className="mt-3 text-xs text-ink-muted/80">
-            GST is included in the price. The CGST/SGST or IGST split is set by
-            your shipping state at checkout.
-          </p>
+          {showGst ? (
+            <p className="mt-3 text-xs text-ink-muted/80">
+              GST is included in the price. The CGST/SGST or IGST split is set by
+              your shipping state at checkout.
+            </p>
+          ) : (
+            <p className="mt-3 text-xs text-ink-muted/80">
+              GST is not charged as the seller is not currently registered under GST.
+            </p>
+          )}
           <div className="mt-5 flex justify-between border-t border-border pt-5 text-ink">
             <span className="font-medium">Total</span>
             <span className="font-medium">{formatInr(subtotal)}</span>
