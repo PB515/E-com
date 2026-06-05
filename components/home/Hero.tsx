@@ -43,7 +43,7 @@ export default function Hero({
         <ImageSlot
           label="Hero photography"
           src={imageUrl || undefined}
-          alt="Bugadi"
+          alt="Bugadi.co"
           className="aspect-[4/5] w-full sm:aspect-[16/11] lg:aspect-[4/5]"
         />
       </Reveal>

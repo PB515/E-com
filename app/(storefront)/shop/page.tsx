@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Shop all",
   description:
-    "The full Bugadi collection of oxidised, antique-finish jewellery: ear cuffs, earrings, bracelets, hasli, and pendants.",
+    "The full Bugadi.co collection of oxidised, antique-finish jewellery: ear cuffs, earrings, bracelets, hasli, and pendants.",
 };
 
 export default async function ShopPage() {

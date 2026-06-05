@@ -22,7 +22,7 @@ export default function AdminNav({ email }: { email?: string }) {
     <header className="border-b border-border bg-bg">
       <div className="mx-auto flex max-w-[1200px] flex-wrap items-center gap-x-6 gap-y-3 px-5 py-4 sm:px-8">
         <Link href="/admin" className="font-heading text-xl text-ink">
-          Bugadi admin
+          Bugadi.co admin
         </Link>
         <nav className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
           {links.map((l) => (

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { List, X, ShoppingBag } from "@phosphor-icons/react";
 import { useCart } from "@/lib/cart/CartContext";
+import { BRAND } from "@/lib/site";
 
 export default function SiteHeader({
   categories = [],
@@ -25,9 +26,9 @@ export default function SiteHeader({
         <Link
           href="/"
           className="font-heading text-2xl tracking-tight text-ink"
-          aria-label="Bugadi, home"
+          aria-label={`${BRAND}, home`}
         >
-          Bugadi
+          {BRAND}
         </Link>
 
         {/* desktop nav — single line, condenses to hamburger below lg */}

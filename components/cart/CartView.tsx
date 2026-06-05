@@ -1,11 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { Minus, Plus, Trash, ShoppingBag } from "@phosphor-icons/react";
+import { Minus, Plus, Trash, ShoppingBag, WhatsappLogo } from "@phosphor-icons/react";
 import { useCart } from "@/lib/cart/CartContext";
 import { formatInr } from "@/lib/catalog";
 import { gstIncludedInTotal, DEFAULT_GST_RATE } from "@/lib/tax";
+import { cartLink } from "@/lib/whatsapp";
 import ImageSlot from "@/components/ui/ImageSlot";
+
+const STEPS = [
+  { n: "1", title: "Add products to your bag", body: "Choose the pieces you love." },
+  { n: "2", title: "Send order on WhatsApp", body: "Your cart details are shared with us instantly." },
+  { n: "3", title: "Confirm payment", body: "We share UPI QR / payment details." },
+  { n: "4", title: "We pack and ship", body: "Once payment is confirmed, your order ships across India." },
+];
 
 export default function CartView({ showGst = true }: { showGst?: boolean }) {
   const { lines, subtotal, count, ready, changeQty, remove } = useCart();
@@ -137,12 +145,18 @@ export default function CartView({ showGst = true }: { showGst?: boolean }) {
             <span className="font-medium">Total</span>
             <span className="font-medium">{formatInr(subtotal)}</span>
           </div>
-          <Link
-            href="/checkout"
-            className="mt-6 block rounded-full bg-primary px-6 py-3 text-center text-sm font-medium text-primary-ink transition-colors hover:bg-ink"
+          <a
+            href={cartLink(lines.map((l) => ({ name: l.name, variantLabel: l.variantLabel, qty: l.qty, lineTotal: l.lineTotal })), subtotal)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-6 flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-center text-sm font-medium text-primary-ink transition-colors hover:bg-ink"
           >
-            Checkout
-          </Link>
+            <WhatsappLogo size={18} weight="fill" />
+            Send Cart on WhatsApp
+          </a>
+          <p className="mt-3 text-center text-xs text-ink-muted/80">
+            UPI QR / payment details are shared after you message us. UPI checkout coming soon.
+          </p>
           <Link
             href="/shop"
             className="mt-4 block text-center text-sm text-primary hover:underline"
@@ -150,6 +164,20 @@ export default function CartView({ showGst = true }: { showGst?: boolean }) {
             Continue shopping
           </Link>
         </aside>
+      </div>
+
+      {/* How ordering works */}
+      <div className="mt-14 rounded-3xl border border-border bg-surface px-6 py-10 sm:px-10">
+        <h2 className="font-heading text-2xl text-ink">How ordering works</h2>
+        <ol className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {STEPS.map((s) => (
+            <li key={s.n} className="flex flex-col gap-2">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full border border-border text-sm text-ink">{s.n}</span>
+              <p className="text-sm font-medium text-ink">{s.title}</p>
+              <p className="text-sm text-ink-muted">{s.body}</p>
+            </li>
+          ))}
+        </ol>
       </div>
     </section>
   );

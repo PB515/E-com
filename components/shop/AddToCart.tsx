@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Minus, Plus, Check } from "@phosphor-icons/react";
+import { Minus, Plus, Check, WhatsappLogo } from "@phosphor-icons/react";
 import { formatInr, type ProductVariant } from "@/lib/catalog";
 import { useCart } from "@/lib/cart/CartContext";
+import { productLink } from "@/lib/whatsapp";
 
 // Buy control: variant picker (when a product has >1 active variant) + quantity
 // stepper + Add button, plus a mobile sticky bar (doc 03b). Stock status and
@@ -149,6 +150,23 @@ export default function AddToCart({
               View bag
             </Link>
           </p>
+        ) : null}
+
+        {!soldOut ? (
+          <>
+            <a
+              href={productLink(name, variant.label, qty, variant.priceInr)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 flex items-center justify-center gap-2 rounded-full border border-border px-6 py-3 text-sm font-medium text-ink transition-colors hover:bg-surface"
+            >
+              <WhatsappLogo size={18} weight="fill" />
+              Order on WhatsApp
+            </a>
+            <p className="mt-2 text-xs text-ink-muted/80">
+              UPI payment link / QR is shared after order confirmation.
+            </p>
+          </>
         ) : null}
       </div>
 

@@ -49,7 +49,7 @@ export default async function ProductPage({
     "@type": "Product",
     name: product.name,
     description: product.story,
-    brand: { "@type": "Brand", name: "Bugadi" },
+    brand: { "@type": "Brand", name: "Bugadi.co" },
     category: category?.name,
     offers: {
       "@type": "Offer",

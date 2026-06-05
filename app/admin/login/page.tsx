@@ -17,7 +17,7 @@ export default async function AdminLoginPage({
   return (
     <div className="flex min-h-[70vh] items-center justify-center px-5 py-16">
       <div className="w-full max-w-sm rounded-3xl border border-border bg-surface p-8">
-        <p className="font-heading text-2xl text-ink">Bugadi</p>
+        <p className="font-heading text-2xl text-ink">Bugadi.co</p>
         <h1 className="mt-1 text-sm uppercase tracking-[0.18em] text-ink-muted">
           Admin
         </h1>

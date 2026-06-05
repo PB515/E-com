@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Cormorant_Garamond, Outfit } from "next/font/google";
 import "./globals.css";
 
-const SITE_NAME = "Bugadi";
+const SITE_NAME = "Bugadi.co";
 
 // Heritage serif display (skill-approved, NOT Fraunces) + clean sans body.
 const cormorant = Cormorant_Garamond({
@@ -22,7 +22,7 @@ const outfit = Outfit({
 export const metadata: Metadata = {
   // Title template: the brand name appears ONCE (launch-gate check, doc 11).
   title: {
-    default: "Bugadi: Traditional Indian Ornament, Styled to Wear Today",
+    default: "Bugadi.co: Traditional Indian Ornament, Styled to Wear Today",
     template: `%s | ${SITE_NAME}`,
   },
   description:
