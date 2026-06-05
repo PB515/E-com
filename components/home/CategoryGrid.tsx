@@ -15,7 +15,7 @@ const FIVE_LAYOUT = [
   { span: "col-span-2 lg:col-span-3", aspect: "aspect-[16/10]" },
 ];
 
-export default async function CategoryGrid() {
+export default async function CategoryGrid({ title = "Shop by category" }: { title?: string }) {
   const categories = await getHomeCategories();
   if (categories.length === 0) return null;
   const useFive = categories.length === 5;
@@ -23,7 +23,7 @@ export default async function CategoryGrid() {
 
   return (
     <section className="mx-auto max-w-[1400px] px-5 py-16 sm:px-8 lg:py-24">
-      <h2 className="font-heading text-3xl text-ink sm:text-4xl">Shop by category</h2>
+      <h2 className="font-heading text-3xl text-ink sm:text-4xl">{title}</h2>
       <div className={`mt-8 grid grid-cols-2 gap-4 ${gridCols}`}>
         {categories.map((c, i) => {
           const span = useFive ? FIVE_LAYOUT[i].span : "";

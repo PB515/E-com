@@ -5,13 +5,13 @@ import Reveal from "@/components/site/Reveal";
 
 // Horizontal scroll-snap rail — a different layout family from the category
 // grid (skill §4.7 no-repetition). Reads featured products from the database.
-export default async function FeaturedPieces() {
+export default async function FeaturedPieces({ title = "A considered edit" }: { title?: string }) {
   const featured = await getFeatured();
   if (featured.length === 0) return null;
   return (
     <section className="py-16 lg:py-24">
       <div className="mx-auto flex max-w-[1400px] items-end justify-between px-5 sm:px-8">
-        <h2 className="font-heading text-3xl text-ink sm:text-4xl">A considered edit</h2>
+        <h2 className="font-heading text-3xl text-ink sm:text-4xl">{title}</h2>
         <Link
           href="/shop"
           className="text-sm text-ink-muted underline-offset-4 transition-colors hover:text-ink hover:underline"

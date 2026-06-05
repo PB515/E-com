@@ -7,7 +7,13 @@ import { subscribeNewsletter } from "@/app/(storefront)/actions";
 
 // Secondary CTA — festive-drops capture (doc 01 Flow 2). Persists to Supabase
 // via a server action (honeypot + server-side validation).
-export default function NewsletterBand() {
+export default function NewsletterBand({
+  title = "Festive drops and restocks",
+  subtitle = "Be first when new pieces land. Occasional emails, no spam.",
+}: {
+  title?: string;
+  subtitle?: string;
+}) {
   const [note, setNote] = useState("");
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -24,10 +30,10 @@ export default function NewsletterBand() {
     <section className="mx-auto max-w-[1400px] px-5 py-16 sm:px-8 lg:py-24">
       <div className="rounded-3xl border border-border bg-surface px-8 py-14 text-center lg:px-16">
         <h2 className="font-heading text-3xl text-ink sm:text-4xl">
-          Festive drops and restocks
+          {title}
         </h2>
         <p className="mx-auto mt-3 max-w-md text-sm text-ink-muted">
-          Be first when new pieces land. Occasional emails, no spam.
+          {subtitle}
         </p>
 
         <form
