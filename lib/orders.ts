@@ -29,6 +29,37 @@ export interface CreateOrderResult {
   paymentMethod: "online" | "cod";
 }
 
+// CRM dedupe: find an existing customer by phone (last 10 digits) or email,
+// reuse it; else create. Source is only set when creating. Used by the website
+// checkout and (later) manual order creation.
+export async function upsertCustomer(
+  sb: ReturnType<typeof createAdminClient>,
+  c: { name: string; email: string; phone: string; source?: string },
+): Promise<{ id: string } | null> {
+  const phone10 = (c.phone || "").replace(/\D/g, "").slice(-10);
+  const email = (c.email || "").trim().toLowerCase();
+
+  let existing: { id: string } | null = null;
+  if (phone10) {
+    const { data } = await sb.from("customers").select("id").ilike("phone", `%${phone10}`).limit(1).maybeSingle();
+    existing = data;
+  }
+  if (!existing && email) {
+    const { data } = await sb.from("customers").select("id").eq("email", email).limit(1).maybeSingle();
+    existing = data;
+  }
+  if (existing) {
+    await sb.from("customers").update({ name: c.name }).eq("id", existing.id);
+    return existing;
+  }
+  const { data } = await sb
+    .from("customers")
+    .insert({ name: c.name, email, phone: c.phone, source: c.source ?? null })
+    .select("id")
+    .single();
+  return data ?? null;
+}
+
 // Re-reads authoritative price/stock from the DB (never trusts client prices),
 // computes place-of-supply GST, writes customer/address/order/order_items with
 // the tax snapshot. COD finalizes immediately; online is left pending for the
@@ -67,16 +98,15 @@ export async function createOrder(
   const rate = Number(tax?.default_gst_rate ?? DEFAULT_GST_RATE);
   const gst = computeGstFromInclusive(subtotal, rate, input.address.state, sellerState);
 
-  const { data: cust, error: custErr } = await sb
-    .from("customers")
-    .insert({
-      name: input.customer.name,
-      email: input.customer.email,
-      phone: input.customer.phone,
-    })
-    .select("id")
-    .single();
-  if (custErr || !cust) throw new Error("Could not save customer");
+  // CRM dedupe: reuse an existing customer (by phone, then email) so repeat
+  // buyers build one profile; otherwise create a new one stamped with source.
+  const cust = await upsertCustomer(sb, {
+    name: input.customer.name,
+    email: input.customer.email,
+    phone: input.customer.phone,
+    source: "website",
+  });
+  if (!cust) throw new Error("Could not save customer");
 
   const { data: addr, error: addrErr } = await sb
     .from("addresses")
@@ -99,7 +129,9 @@ export async function createOrder(
       customer_id: cust.id,
       address_id: addr.id,
       status,
+      source: "website",
       payment_method: input.paymentMethod === "cod" ? "cod" : "razorpay",
+      payment_status: input.paymentMethod === "cod" ? "pending" : "paid",
       place_of_supply_state: input.address.state,
       is_intra_state: gst.isIntraState,
       subtotal_inr: subtotal,

@@ -6,16 +6,28 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminDashboard() {
   const sb = await createClient();
-  const [orders, products, pendingReturns, subs, lowStock, recent] = await Promise.all([
+  const [orders, products, pendingReturns, subs, lowStock, recent, bySource] = await Promise.all([
     sb.from("orders").select("id", { count: "exact", head: true }),
     sb.from("products").select("id", { count: "exact", head: true }),
     sb.from("return_requests").select("id", { count: "exact", head: true }).eq("status", "pending"),
     sb.from("subscribers").select("id", { count: "exact", head: true }),
     sb.from("products").select("name,stock,slug").eq("is_active", true).gt("stock", 0).lte("stock", 5).order("stock"),
     sb.from("orders").select("id,order_number,status,grand_total_inr,created_at").order("created_at", { ascending: false }).limit(8),
+    sb.from("orders").select("source,grand_total_inr,status"),
   ]);
 
   const lowItems = lowStock.data ?? [];
+  const PAID = new Set(["paid", "cod_confirmed", "packed", "shipped", "delivered", "fulfilled"]);
+  const sourceTotals = new Map<string, { count: number; total: number }>();
+  for (const o of (bySource.data ?? []) as any[]) {
+    if (!PAID.has(o.status)) continue;
+    const k = o.source ?? "website";
+    const cur = sourceTotals.get(k) ?? { count: 0, total: 0 };
+    cur.count += 1;
+    cur.total += Number(o.grand_total_inr);
+    sourceTotals.set(k, cur);
+  }
+  const sourceRows = [...sourceTotals.entries()].sort((a, b) => b[1].total - a[1].total);
   const stats = [
     { label: "Orders", value: orders.count ?? 0, href: "/admin/orders" },
     { label: "Products", value: products.count ?? 0, href: "/admin/products" },
@@ -71,6 +83,30 @@ export default async function AdminDashboard() {
           </tbody>
         </table>
       </div>
+
+      {sourceRows.length > 0 ? (
+        <>
+          <h2 className="mt-10 font-heading text-xl text-ink">Sales by source</h2>
+          <div className="mt-4 overflow-hidden rounded-2xl border border-border">
+            <table className="w-full text-sm">
+              <thead className="bg-surface text-left text-ink-muted">
+                <tr><th className="px-4 py-3">Source</th><th className="px-4 py-3 text-right">Orders</th><th className="px-4 py-3 text-right">Revenue</th></tr>
+              </thead>
+              <tbody>
+                {sourceRows.map(([src, v]) => (
+                  <tr key={src} className="border-t border-border">
+                    <td className="px-4 py-3 text-ink">
+                      <Link href={`/admin/orders?source=${src}`} className="hover:underline">{src}</Link>
+                    </td>
+                    <td className="px-4 py-3 text-right text-ink-muted">{v.count}</td>
+                    <td className="px-4 py-3 text-right text-ink">{formatInr(v.total)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      ) : null}
     </div>
   );
 }

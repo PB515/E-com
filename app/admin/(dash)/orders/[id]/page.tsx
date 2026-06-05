@@ -36,8 +36,11 @@ export default async function AdminOrderDetailPage({
         ) : null}
       </div>
       <p className="mt-1 text-sm text-ink-muted">
-        {order.status} · {order.payment_method} · {invoice?.invoice_number ?? "no invoice"}
+        {order.source ?? "website"} · {order.status} · {order.payment_method}{order.payment_status && order.payment_status !== "paid" ? ` (${order.payment_status})` : ""} · {invoice?.invoice_number ?? "no invoice"}
       </p>
+      {order.internal_note ? (
+        <p className="mt-2 rounded-xl border border-border bg-surface px-4 py-3 text-sm text-ink-muted">Note: {order.internal_note}</p>
+      ) : null}
 
       <div className="mt-6">
         <OrderFulfillment
