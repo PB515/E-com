@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import ProductEditor from "@/components/admin/ProductEditor";
-import ProductImageUpload from "@/components/admin/ProductImageUpload";
+import ProductGallery from "@/components/admin/ProductGallery";
 import ProductDangerActions from "@/components/admin/ProductDangerActions";
 
 export const dynamic = "force-dynamic";
@@ -17,13 +17,12 @@ export default async function AdminProductEditPage({
   const { data: product } = await sb.from("products").select("*").eq("slug", slug).maybeSingle();
   if (!product) notFound();
 
-  const { data: img } = await sb
+  const { data: images } = await sb
     .from("product_images")
-    .select("url")
+    .select("id,url,is_primary")
     .eq("product_id", product.id)
     .order("is_primary", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .order("sort_order");
 
   return (
     <div>
@@ -31,9 +30,9 @@ export default async function AdminProductEditPage({
       <h1 className="mt-3 font-heading text-3xl text-ink">{product.name}</h1>
 
       <div className="mt-6 rounded-2xl border border-border bg-surface p-5">
-        <h2 className="font-heading text-lg text-ink">Image</h2>
+        <h2 className="font-heading text-lg text-ink">Images</h2>
         <div className="mt-4">
-          <ProductImageUpload slug={product.slug} currentUrl={img?.url} />
+          <ProductGallery slug={product.slug} images={images ?? []} />
         </div>
       </div>
 

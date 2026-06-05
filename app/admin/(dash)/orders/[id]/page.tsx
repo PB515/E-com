@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { formatInr } from "@/lib/catalog";
-import MarkFulfilledButton from "@/components/admin/MarkFulfilledButton";
+import OrderFulfillment from "@/components/admin/OrderFulfillment";
 
 export const dynamic = "force-dynamic";
 const inr = (v: unknown) => formatInr(Number(v));
@@ -29,15 +29,25 @@ export default async function AdminOrderDetailPage({
       <Link href="/admin/orders" className="text-sm text-ink-muted hover:text-ink">← Orders</Link>
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-heading text-3xl text-ink">{order.order_number}</h1>
-        {order.status === "paid" || order.status === "cod_confirmed" ? (
-          <MarkFulfilledButton orderId={id} />
-        ) : (
-          <span className="text-sm text-ink-muted">{order.status}</span>
-        )}
+        {invoice?.invoice_number ? (
+          <Link href={`/admin/orders/${id}/invoice`} className="rounded-full border border-border px-5 py-2.5 text-sm text-ink hover:bg-surface">
+            Invoice / packing slip
+          </Link>
+        ) : null}
       </div>
       <p className="mt-1 text-sm text-ink-muted">
         {order.status} · {order.payment_method} · {invoice?.invoice_number ?? "no invoice"}
       </p>
+
+      <div className="mt-6">
+        <OrderFulfillment
+          orderId={id}
+          status={order.status}
+          tracking={order.tracking_number}
+          courier={order.courier}
+          shipmentId={order.shiprocket_shipment_id}
+        />
+      </div>
 
       <div className="mt-8 grid gap-6 sm:grid-cols-2">
         <div className="rounded-2xl border border-border bg-surface p-5 text-sm">

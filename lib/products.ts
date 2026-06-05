@@ -31,14 +31,15 @@ interface ProductRow {
   product_images?: ProductImageRow[] | null;
 }
 
-function primaryImage(rows?: ProductImageRow[] | null): string | undefined {
-  if (!rows || rows.length === 0) return undefined;
-  const sorted = [...rows].sort(
-    (a, b) =>
-      (b.is_primary ? 1 : 0) - (a.is_primary ? 1 : 0) ||
-      (a.sort_order ?? 0) - (b.sort_order ?? 0),
-  );
-  return sorted[0]?.url;
+function galleryUrls(rows?: ProductImageRow[] | null): string[] {
+  if (!rows || rows.length === 0) return [];
+  return [...rows]
+    .sort(
+      (a, b) =>
+        (b.is_primary ? 1 : 0) - (a.is_primary ? 1 : 0) ||
+        (a.sort_order ?? 0) - (b.sort_order ?? 0),
+    )
+    .map((r) => r.url);
 }
 
 function mapRow(r: ProductRow): Product {
@@ -57,7 +58,8 @@ function mapRow(r: ProductRow): Product {
     images: r.images,
     stock: r.stock,
     featured: r.featured,
-    imageUrl: primaryImage(r.product_images),
+    gallery: galleryUrls(r.product_images),
+    imageUrl: galleryUrls(r.product_images)[0],
   };
 }
 

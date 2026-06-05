@@ -132,16 +132,60 @@ export async function uploadProductImage(slug: string, formData: FormData) {
   if (up.error) return { error: up.error.message };
 
   const { data: pub } = admin.storage.from("product-images").getPublicUrl(path);
-  // make this the primary image
-  await admin.from("product_images").update({ is_primary: false }).eq("product_id", product.id);
+  // first image becomes primary; additional images are added to the gallery
+  const { data: existing } = await admin
+    .from("product_images")
+    .select("id")
+    .eq("product_id", product.id);
+  const isFirst = !existing || existing.length === 0;
   const { error: insErr } = await admin.from("product_images").insert({
     product_id: product.id,
     url: pub.publicUrl,
-    is_primary: true,
-    sort_order: 0,
+    is_primary: isFirst,
+    sort_order: existing?.length ?? 0,
   });
   if (insErr) return { error: insErr.message };
 
   revalidateStorefront(slug);
   return { ok: true as const, url: pub.publicUrl };
+}
+
+export async function setPrimaryImage(slug: string, imageId: string) {
+  const supa = await createClient();
+  const { data: isAdmin } = await supa.rpc("is_admin");
+  if (!isAdmin) return { error: "Not authorized." };
+  const admin = createAdminClient();
+  const { data: product } = await admin.from("products").select("id").eq("slug", slug).maybeSingle();
+  if (!product) return { error: "Product not found." };
+  await admin.from("product_images").update({ is_primary: false }).eq("product_id", product.id);
+  const { error } = await admin.from("product_images").update({ is_primary: true }).eq("id", imageId);
+  if (error) return { error: error.message };
+  revalidateStorefront(slug);
+  return { ok: true as const };
+}
+
+export async function deleteProductImage(slug: string, imageId: string) {
+  const supa = await createClient();
+  const { data: isAdmin } = await supa.rpc("is_admin");
+  if (!isAdmin) return { error: "Not authorized." };
+  const admin = createAdminClient();
+  const { data: img } = await admin.from("product_images").select("url,is_primary,product_id").eq("id", imageId).maybeSingle();
+  const { error } = await admin.from("product_images").delete().eq("id", imageId);
+  if (error) return { error: error.message };
+  // best-effort: remove the storage object + promote another image to primary
+  if (img) {
+    try {
+      const marker = "/product-images/";
+      const i = img.url.indexOf(marker);
+      if (i >= 0) await admin.storage.from("product-images").remove([img.url.slice(i + marker.length)]);
+    } catch {
+      // ignore storage cleanup failure
+    }
+    if (img.is_primary) {
+      const { data: next } = await admin.from("product_images").select("id").eq("product_id", img.product_id).order("sort_order").limit(1).maybeSingle();
+      if (next) await admin.from("product_images").update({ is_primary: true }).eq("id", next.id);
+    }
+  }
+  revalidateStorefront(slug);
+  return { ok: true as const };
 }

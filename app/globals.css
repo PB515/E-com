@@ -73,3 +73,14 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* Print: clean white page for invoices/packing slips (hide app chrome). */
+@media print {
+  body {
+    background: #fff !important;
+  }
+  header,
+  .no-print {
+    display: none !important;
+  }
+}

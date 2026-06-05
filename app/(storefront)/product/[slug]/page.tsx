@@ -68,16 +68,19 @@ export default async function ProductPage({
         <div>
           <ImageSlot
             label={product.name}
-            src={product.imageUrl}
+            src={product.gallery?.[0]}
             alt={product.name}
             sizes="(min-width: 1024px) 50vw, 100vw"
             className="aspect-square w-full"
           />
-          {product.images > 1 ? (
+          {product.gallery && product.gallery.length > 1 ? (
             <div className="mt-4 grid grid-cols-4 gap-3">
-              {Array.from({ length: Math.min(product.images, 4) }).map((_, i) => (
+              {product.gallery.slice(1, 5).map((url, i) => (
                 <ImageSlot
-                  key={i}
+                  key={url}
+                  src={url}
+                  alt={`${product.name} ${i + 2}`}
+                  sizes="20vw"
                   className="aspect-square w-full"
                   rounded="rounded-xl"
                 />
