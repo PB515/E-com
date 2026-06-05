@@ -71,6 +71,13 @@ function mapVariants(rows: ProductVariantRow[] | null | undefined, productPrice:
     }));
 }
 
+export const PRODUCT_SELECT = SELECT;
+export type { ProductRow };
+
+export function mapProductRow(r: ProductRow): Product {
+  return mapRow(r);
+}
+
 function mapRow(r: ProductRow): Product {
   return {
     slug: r.slug,
