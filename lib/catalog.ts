@@ -27,6 +27,15 @@ export const CATEGORIES: Category[] = [
   { slug: "pendants", name: "Pendants", blurb: "Deity and coin motifs", intro: "Small pieces that carry a motif close. Deity and antique-coin reliefs on a fine chain." },
 ];
 
+/** One purchasable option of a product (its own stock / price / SKU). */
+export interface ProductVariant {
+  id: string;
+  label: string;
+  priceInr: number; // resolved: variant override, else the product price (GST-inclusive)
+  stock: number; // 0 = this variant out of stock
+  sku?: string;
+}
+
 /** Product shape used across the storefront. Source of truth = Supabase. */
 export interface Product {
   slug: string;
@@ -47,6 +56,7 @@ export interface Product {
   gallery?: string[]; // all product images, primary first
   seoTitle?: string;
   seoDescription?: string;
+  variants?: ProductVariant[]; // active variants, sorted; may be empty for legacy rows
 }
 
 export function getCategory(slug: string): Category | undefined {

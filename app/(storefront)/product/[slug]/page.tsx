@@ -108,26 +108,14 @@ export default async function ProductPage({
           <p className="mt-3 text-sm text-ink-muted">
             {product.motif} motif, {product.region}
           </p>
-          <p className="mt-5 text-2xl text-ink">
-            {formatInr(product.priceInr)}{" "}
-            <span className="text-base text-ink-muted">incl. GST</span>
-          </p>
 
           <AddToCart
             slug={product.slug}
             name={product.name}
-            priceInr={product.priceInr}
-            soldOut={soldOut}
-            maxQty={product.stock}
+            productPrice={product.priceInr}
+            productStock={product.stock}
+            variants={product.variants ?? []}
           />
-
-          <p className="mt-4 text-sm text-ink-muted">
-            {soldOut
-              ? "Currently out of stock."
-              : product.stock <= 5
-                ? `Only ${product.stock} left.`
-                : "In stock, ready to ship."}
-          </p>
 
           <p className="mt-6 border-t border-border pt-6 text-sm leading-relaxed text-ink-muted">
             Ships across India via Shiprocket, with cash on delivery available.{" "}

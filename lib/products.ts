@@ -1,16 +1,26 @@
 import "server-only";
 import { createPublicClient } from "@/lib/supabase/public";
-import type { Product, CategorySlug } from "@/lib/catalog";
+import type { Product, CategorySlug, ProductVariant } from "@/lib/catalog";
 
 // Server data layer — reads PUBLIC product data from Supabase (anon, active
-// only), with the primary product image embedded. Admin edits reflect on the
-// next request.
+// only), with the primary product image + active variants embedded. Admin edits
+// reflect on the next request.
 
-const SELECT = "*, product_images(url,is_primary,sort_order)";
+const SELECT =
+  "*, product_images(url,is_primary,sort_order), product_variants(id,label,sku,price_inr,stock,is_active,sort_order)";
 
 interface ProductImageRow {
   url: string;
   is_primary: boolean | null;
+  sort_order: number | null;
+}
+interface ProductVariantRow {
+  id: string;
+  label: string;
+  sku: string | null;
+  price_inr: number | null;
+  stock: number;
+  is_active: boolean;
   sort_order: number | null;
 }
 interface ProductRow {
@@ -31,6 +41,7 @@ interface ProductRow {
   seo_title?: string | null;
   seo_description?: string | null;
   product_images?: ProductImageRow[] | null;
+  product_variants?: ProductVariantRow[] | null;
 }
 
 function galleryUrls(rows?: ProductImageRow[] | null): string[] {
@@ -42,6 +53,22 @@ function galleryUrls(rows?: ProductImageRow[] | null): string[] {
         (a.sort_order ?? 0) - (b.sort_order ?? 0),
     )
     .map((r) => r.url);
+}
+
+// Active variants only, sorted; price resolves the variant override or the
+// product price so the storefront always has a concrete number.
+function mapVariants(rows: ProductVariantRow[] | null | undefined, productPrice: number): ProductVariant[] {
+  if (!rows) return [];
+  return rows
+    .filter((v) => v.is_active)
+    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+    .map((v) => ({
+      id: v.id,
+      label: v.label,
+      priceInr: v.price_inr ?? productPrice,
+      stock: v.stock,
+      sku: v.sku ?? undefined,
+    }));
 }
 
 function mapRow(r: ProductRow): Product {
@@ -64,6 +91,7 @@ function mapRow(r: ProductRow): Product {
     imageUrl: galleryUrls(r.product_images)[0],
     seoTitle: r.seo_title ?? undefined,
     seoDescription: r.seo_description ?? undefined,
+    variants: mapVariants(r.product_variants, r.price_inr),
   };
 }
 

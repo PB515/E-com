@@ -51,7 +51,7 @@ export default function CheckoutClient({
     setError("");
     setBusy(true);
     const res = await placeOrder({
-      items: lines.map((l) => ({ slug: l.slug, qty: l.qty })),
+      items: lines.map((l) => ({ slug: l.slug, qty: l.qty, variantId: l.variantId || undefined })),
       customer: { name: form.name, email: form.email, phone: form.phone },
       address: {
         line1: form.line1, line2: form.line2, city: form.city,
@@ -156,8 +156,12 @@ export default function CheckoutClient({
           <h2 className="font-heading text-xl text-ink">Order summary</h2>
           <ul className="mt-4 flex flex-col gap-3">
             {lines.map((l) => (
-              <li key={l.slug} className="flex justify-between gap-3 text-sm">
-                <span className="text-ink-muted">{l.name}<span className="text-ink-muted/70"> &times; {l.qty}</span></span>
+              <li key={l.lineId} className="flex justify-between gap-3 text-sm">
+                <span className="text-ink-muted">
+                  {l.name}
+                  {l.variantLabel && l.variantLabel !== "Standard" ? <span className="text-ink-muted/70"> ({l.variantLabel})</span> : null}
+                  <span className="text-ink-muted/70"> &times; {l.qty}</span>
+                </span>
                 <span className="text-ink">{formatInr(l.lineTotal)}</span>
               </li>
             ))}

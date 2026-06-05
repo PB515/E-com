@@ -48,18 +48,23 @@ export default function CartView() {
         {/* Lines */}
         <ul className="divide-y divide-border border-y border-border">
           {lines.map((line) => (
-            <li key={line.slug} className="flex gap-4 py-5">
+            <li key={line.lineId} className="flex gap-4 py-5">
               <Link href={`/product/${line.slug}`} className="shrink-0">
                 <ImageSlot className="h-24 w-24" rounded="rounded-xl" />
               </Link>
               <div className="flex flex-1 flex-col">
                 <div className="flex justify-between gap-4">
-                  <Link
-                    href={`/product/${line.slug}`}
-                    className="font-heading text-lg text-ink hover:text-ink-muted"
-                  >
-                    {line.name}
-                  </Link>
+                  <div>
+                    <Link
+                      href={`/product/${line.slug}`}
+                      className="font-heading text-lg text-ink hover:text-ink-muted"
+                    >
+                      {line.name}
+                    </Link>
+                    {line.variantLabel && line.variantLabel !== "Standard" ? (
+                      <p className="mt-0.5 text-sm text-ink-muted">{line.variantLabel}</p>
+                    ) : null}
+                  </div>
                   <p className="text-sm text-ink">{formatInr(line.lineTotal)}</p>
                 </div>
 
@@ -67,7 +72,7 @@ export default function CartView() {
                   <div className="flex items-center rounded-full border border-border">
                     <button
                       type="button"
-                      onClick={() => changeQty(line.slug, -1)}
+                      onClick={() => changeQty(line.lineId, -1)}
                       className="p-2.5 text-ink disabled:text-ink-muted"
                       aria-label="Decrease quantity"
                       disabled={line.qty <= 1}
@@ -77,7 +82,7 @@ export default function CartView() {
                     <span className="w-7 text-center text-sm tabular-nums text-ink">{line.qty}</span>
                     <button
                       type="button"
-                      onClick={() => changeQty(line.slug, 1)}
+                      onClick={() => changeQty(line.lineId, 1)}
                       className="p-2.5 text-ink disabled:text-ink-muted"
                       aria-label="Increase quantity"
                       disabled={line.qty >= line.maxStock}
@@ -87,7 +92,7 @@ export default function CartView() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => remove(line.slug)}
+                    onClick={() => remove(line.lineId)}
                     className="flex items-center gap-1.5 text-sm text-ink-muted transition-colors hover:text-ink"
                   >
                     <Trash size={16} />

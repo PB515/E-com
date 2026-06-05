@@ -8,6 +8,7 @@ import { applyStockMovement, defaultVariant } from "@/lib/stock";
 export interface CheckoutItem {
   slug: string;
   qty: number;
+  variantId?: string; // chosen variant; falls back to the product's default
 }
 export interface CheckoutInput {
   items: CheckoutItem[];
@@ -73,19 +74,29 @@ export async function createOrder(
   const slugs = input.items.map((i) => i.slug);
   const { data: products } = await sb
     .from("products")
-    .select("*")
+    .select("*, product_variants(id,label,price_inr,stock,is_active,sort_order)")
     .in("slug", slugs)
     .eq("is_active", true);
   if (!products || products.length === 0) throw new Error("No valid products in cart");
 
+  // Resolve each line to a concrete VARIANT (the chosen one, validated to belong
+  // to the product + be active; else the product's first active variant). Price
+  // and stock come from the variant — never trust the client.
   const lines = input.items
     .map((it) => {
       const p = products.find((x: { slug: string }) => x.slug === it.slug);
-      if (!p || p.stock <= 0) return null;
-      const qty = Math.max(1, Math.min(it.qty, p.stock));
-      return { p, qty, lineTotal: p.price_inr * qty };
+      if (!p) return null;
+      const active = ((p.product_variants ?? []) as any[])
+        .filter((v) => v.is_active)
+        .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+      const chosen = it.variantId ? active.find((v) => v.id === it.variantId) : active[0];
+      const v = chosen ?? active[0];
+      if (!v || v.stock <= 0) return null;
+      const unitPrice = v.price_inr ?? p.price_inr;
+      const qty = Math.max(1, Math.min(it.qty, v.stock));
+      return { p, v, qty, unitPrice, lineTotal: unitPrice * qty };
     })
-    .filter((l): l is { p: any; qty: number; lineTotal: number } => l !== null);
+    .filter((l): l is { p: any; v: any; qty: number; unitPrice: number; lineTotal: number } => l !== null);
   if (lines.length === 0) throw new Error("No purchasable items in cart");
 
   const subtotal = lines.reduce((s, l) => s + l.lineTotal, 0);
@@ -146,24 +157,20 @@ export async function createOrder(
     .single();
   if (orderErr || !order) throw new Error("Could not create order");
 
-  // attach the default variant per line (the storefront sells at product level
-  // until the variant picker ships; multi-variant products default to variant 1)
-  const itemsToInsert = [];
-  for (const l of lines) {
-    const v = await defaultVariant(sb, l.p.id);
-    itemsToInsert.push({
-      order_id: order.id,
-      product_id: l.p.id,
-      product_name: l.p.name,
-      unit_price_inr: l.p.price_inr,
-      qty: l.qty,
-      hsn_code: l.p.hsn_code,
-      gst_rate: l.p.gst_rate,
-      line_total_inr: l.lineTotal,
-      variant_id: v?.id ?? null,
-      variant_label: v?.label ?? null,
-    });
-  }
+  // each line already carries its resolved variant (chosen on the PDP, or the
+  // product default) — store its id/label + the variant's price snapshot.
+  const itemsToInsert = lines.map((l) => ({
+    order_id: order.id,
+    product_id: l.p.id,
+    product_name: l.p.name,
+    unit_price_inr: l.unitPrice,
+    qty: l.qty,
+    hsn_code: l.p.hsn_code,
+    gst_rate: l.p.gst_rate,
+    line_total_inr: l.lineTotal,
+    variant_id: l.v.id,
+    variant_label: l.v.label,
+  }));
   await sb.from("order_items").insert(itemsToInsert);
 
   if (input.paymentMethod === "cod") {

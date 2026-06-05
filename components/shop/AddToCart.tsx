@@ -3,38 +3,104 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Minus, Plus, Check } from "@phosphor-icons/react";
-import { formatInr } from "@/lib/catalog";
+import { formatInr, type ProductVariant } from "@/lib/catalog";
 import { useCart } from "@/lib/cart/CartContext";
 
-// Buy control: quantity stepper + Add button, plus a mobile sticky bar
-// (doc 03b — sticky add-to-cart on mobile). Phase 3: adds to the client cart.
+// Buy control: variant picker (when a product has >1 active variant) + quantity
+// stepper + Add button, plus a mobile sticky bar (doc 03b). Stock status and
+// price track the SELECTED variant. Server re-validates everything at checkout.
 export default function AddToCart({
   slug,
   name,
-  priceInr,
-  soldOut,
-  maxQty,
+  productPrice,
+  productStock,
+  variants,
 }: {
   slug: string;
   name: string;
-  priceInr: number;
-  soldOut: boolean;
-  maxQty: number;
+  productPrice: number;
+  productStock: number;
+  variants: ProductVariant[];
 }) {
-  const { add } = useCart();
+  // Legacy products with no variant rows fall back to a single synthetic option.
+  const options: ProductVariant[] =
+    variants.length > 0
+      ? variants
+      : [{ id: "", label: "", priceInr: productPrice, stock: productStock }];
+  const hasPicker = options.length > 1;
+
+  const firstInStock = options.findIndex((v) => v.stock > 0);
+  const [sel, setSel] = useState(firstInStock >= 0 ? firstInStock : 0);
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
 
+  const { add } = useCart();
+  const variant = options[sel];
+  const maxQty = variant.stock;
+  const soldOut = maxQty <= 0;
   const clamp = (n: number) => Math.min(Math.max(n, 1), Math.max(maxQty, 1));
 
+  function selectVariant(i: number) {
+    setSel(i);
+    setQty(1);
+    setAdded(false);
+  }
+
   function handleAdd() {
-    add({ slug, name, priceInr, stock: maxQty }, qty);
+    if (soldOut) return;
+    add(
+      {
+        slug,
+        name,
+        priceInr: variant.priceInr,
+        stock: variant.stock,
+        variantId: variant.id || undefined,
+        variantLabel: variant.label || undefined,
+      },
+      qty,
+    );
     setAdded(true);
     window.setTimeout(() => setAdded(false), 2500);
   }
 
   return (
     <>
+      {/* selected variant price (authoritative for the buy action) */}
+      <p className="mt-5 text-2xl text-ink">
+        {formatInr(variant.priceInr)}{" "}
+        <span className="text-base text-ink-muted">incl. GST</span>
+      </p>
+
+      {hasPicker ? (
+        <div className="mt-5">
+          <p className="mb-2 text-sm text-ink-muted">Choose an option</p>
+          <div className="flex flex-wrap gap-2">
+            {options.map((v, i) => {
+              const out = v.stock <= 0;
+              const active = i === sel;
+              return (
+                <button
+                  key={v.id || v.label}
+                  type="button"
+                  onClick={() => selectVariant(i)}
+                  aria-pressed={active}
+                  className={[
+                    "rounded-full border px-4 py-2 text-sm transition-colors",
+                    active
+                      ? "border-ink bg-primary text-primary-ink"
+                      : "border-border text-ink hover:border-ink-muted",
+                    out ? "opacity-50" : "",
+                  ].join(" ")}
+                >
+                  {v.label}
+                  {out ? " · sold out" : ""}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+
       {/* inline control (buy panel) */}
       <div className="mt-6">
         {soldOut ? (
@@ -84,13 +150,24 @@ export default function AddToCart({
         ) : null}
       </div>
 
+      {/* stock status for the selected variant */}
+      <p className="mt-4 text-sm text-ink-muted">
+        {soldOut
+          ? hasPicker
+            ? "This option is out of stock."
+            : "Currently out of stock."
+          : maxQty <= 5
+            ? `Only ${maxQty} left${hasPicker ? " in this option" : ""}.`
+            : "In stock, ready to ship."}
+      </p>
+
       {/* mobile sticky bar */}
       {!soldOut ? (
         <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-bg/95 px-5 py-3 backdrop-blur lg:hidden">
           <div className="flex items-center justify-between gap-4">
             <span className="text-sm text-ink">
-              {formatInr(priceInr)}{" "}
-              <span className="text-ink-muted">incl. GST</span>
+              {formatInr(variant.priceInr)}{" "}
+              <span className="text-ink-muted">{hasPicker ? variant.label : "incl. GST"}</span>
             </span>
             <button
               type="button"
