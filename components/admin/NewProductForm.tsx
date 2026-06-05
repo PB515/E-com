@@ -4,22 +4,18 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createProduct } from "@/app/admin/(dash)/products/actions";
 
-const CATEGORIES = [
-  { slug: "hasli", name: "Hasli" },
-  { slug: "earrings", name: "Earrings" },
-  { slug: "ear-cuffs", name: "Ear Cuffs" },
-  { slug: "bracelets", name: "Bracelets" },
-  { slug: "pendants", name: "Pendants" },
-];
-
 const inputClass =
   "w-full rounded-2xl border border-border bg-surface-2 px-4 py-3 text-sm text-ink focus:border-ink-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent";
 const labelClass = "mb-2 block text-sm text-ink";
 
-export default function NewProductForm() {
+export default function NewProductForm({
+  categories = [],
+}: {
+  categories?: { slug: string; name: string }[];
+}) {
   const router = useRouter();
   const [f, setF] = useState({
-    name: "", slug: "", category: "earrings",
+    name: "", slug: "", category: categories[0]?.slug ?? "",
     price_inr: "499", stock: "10", hsn_code: "7117", gst_rate: "12",
     is_active: true, featured: false,
     motif: "", region: "", occasion: "", story: "",
@@ -63,7 +59,7 @@ export default function NewProductForm() {
         <div>
           <label className={labelClass}>Category</label>
           <select value={f.category} onChange={set("category")} className={inputClass}>
-            {CATEGORIES.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
+            {categories.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
           </select>
         </div>
         <div><label className={labelClass}>Price (₹)</label><input type="number" required value={f.price_inr} onChange={set("price_inr")} className={inputClass} /></div>

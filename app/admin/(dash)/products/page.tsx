@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { formatInr, CATEGORIES } from "@/lib/catalog";
+import { formatInr } from "@/lib/catalog";
+import { getAdminCategories } from "@/lib/categories";
 import { scoreProduct } from "@/lib/completeness";
 
 export const dynamic = "force-dynamic";
@@ -24,6 +25,7 @@ export default async function AdminProductsPage({
   const status = sp.status ?? "";
 
   const sb = await createClient();
+  const categories = await getAdminCategories();
   let query = sb
     .from("products")
     .select("*, product_images(url,is_primary)");
@@ -57,7 +59,7 @@ export default async function AdminProductsPage({
         <input name="q" defaultValue={q} placeholder="Search by name…" className="min-w-[180px] flex-1 rounded-full border border-border bg-surface-2 px-4 py-2 text-sm text-ink placeholder:text-ink-muted/70" />
         <select name="category" defaultValue={category} className={selectClass}>
           <option value="">All categories</option>
-          {CATEGORIES.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
+          {categories.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
         </select>
         <select name="status" defaultValue={status} className={selectClass}>
           {STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}

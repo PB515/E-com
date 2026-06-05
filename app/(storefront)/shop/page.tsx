@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CATEGORIES } from "@/lib/catalog";
 import { getAllProducts } from "@/lib/products";
+import { getActiveCategories } from "@/lib/categories";
 import { getPublicTaxMode } from "@/lib/tax-settings";
 import ProductCard from "@/components/shop/ProductCard";
 import NewsletterBand from "@/components/site/NewsletterBand";
@@ -17,6 +17,7 @@ export const metadata: Metadata = {
 
 export default async function ShopPage() {
   const products = await getAllProducts();
+  const categories = await getActiveCategories();
   const showGst = (await getPublicTaxMode()) === "gst";
   return (
     <>
@@ -27,7 +28,7 @@ export default async function ShopPage() {
           its motif, its region, and the occasion it belongs to.
         </p>
         <div className="mt-6 flex flex-wrap gap-2">
-          {CATEGORIES.map((c) => (
+          {categories.map((c) => (
             <Link
               key={c.slug}
               href={`/category/${c.slug}`}

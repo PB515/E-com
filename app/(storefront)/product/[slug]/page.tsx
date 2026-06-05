@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getCategory, formatInr } from "@/lib/catalog";
+import { formatInr } from "@/lib/catalog";
 import { getProductBySlug, getRelated } from "@/lib/products";
+import { getCategoryLabel } from "@/lib/categories";
 import { getPublicTaxMode } from "@/lib/tax-settings";
 import ImageSlot from "@/components/ui/ImageSlot";
 import ProductCard from "@/components/shop/ProductCard";
@@ -36,7 +37,7 @@ export default async function ProductPage({
   const product = await getProductBySlug(slug);
   if (!product) notFound();
 
-  const category = getCategory(product.category);
+  const category = await getCategoryLabel(product.category);
   const related = await getRelated(product, 3);
   const soldOut = product.stock <= 0;
   const showGst = (await getPublicTaxMode()) === "gst";

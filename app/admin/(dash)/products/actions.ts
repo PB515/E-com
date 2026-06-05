@@ -29,8 +29,6 @@ export interface ProductFields {
   height_cm: number | null;
 }
 
-const CATEGORIES = ["ear-cuffs", "earrings", "bracelets", "hasli", "pendants"];
-
 function slugify(s: string): string {
   return s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 }
@@ -67,7 +65,8 @@ export async function createProduct(input: CreateProductInput) {
   const sb = await createClient(); // RLS enforces admin on the write
   const slug = slugify(input.slug || input.name);
   if (!slug) return { error: "A name or slug is required." };
-  if (!CATEGORIES.includes(input.category)) return { error: "Pick a valid category." };
+  const { data: catExists } = await sb.from("categories").select("slug").eq("slug", input.category).maybeSingle();
+  if (!catExists) return { error: "Pick a valid category." };
 
   const { data: created, error } = await sb.from("products").insert({
     slug,

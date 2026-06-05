@@ -1,36 +1,38 @@
 import Link from "next/link";
-import { CATEGORIES } from "@/lib/catalog";
 
-const columns: { heading: string; links: { href: string; label: string }[] }[] = [
-  {
-    heading: "Shop",
-    links: CATEGORIES.map((c) => ({ href: `/category/${c.slug}`, label: c.name })),
-  },
-  {
-    heading: "Bugadi",
-    links: [
-      { href: "/our-roots", label: "Our Roots" },
-      { href: "/shop", label: "Shop all" },
-    ],
-  },
-  {
-    heading: "Help",
-    links: [
-      { href: "/shipping", label: "Shipping" },
-      { href: "/returns", label: "Returns" },
-      { href: "/contact", label: "Contact" },
-    ],
-  },
-  {
-    heading: "Legal",
-    links: [
-      { href: "/privacy", label: "Privacy" },
-      { href: "/terms", label: "Terms" },
-    ],
-  },
-];
-
-export default function SiteFooter() {
+export default function SiteFooter({
+  categories = [],
+}: {
+  categories?: { slug: string; name: string }[];
+}) {
+  const columns: { heading: string; links: { href: string; label: string }[] }[] = [
+    {
+      heading: "Shop",
+      links: categories.map((c) => ({ href: `/category/${c.slug}`, label: c.name })),
+    },
+    {
+      heading: "Bugadi",
+      links: [
+        { href: "/our-roots", label: "Our Roots" },
+        { href: "/shop", label: "Shop all" },
+      ],
+    },
+    {
+      heading: "Help",
+      links: [
+        { href: "/shipping", label: "Shipping" },
+        { href: "/returns", label: "Returns" },
+        { href: "/contact", label: "Contact" },
+      ],
+    },
+    {
+      heading: "Legal",
+      links: [
+        { href: "/privacy", label: "Privacy" },
+        { href: "/terms", label: "Terms" },
+      ],
+    },
+  ];
   return (
     <footer className="mt-auto border-t border-border bg-bg">
       <div className="mx-auto max-w-[1400px] px-5 py-14 sm:px-8">

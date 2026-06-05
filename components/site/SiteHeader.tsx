@@ -3,17 +3,20 @@
 import { useState } from "react";
 import Link from "next/link";
 import { List, X, ShoppingBag } from "@phosphor-icons/react";
-import { CATEGORIES } from "@/lib/catalog";
 import { useCart } from "@/lib/cart/CartContext";
 
-const navLinks = [
-  ...CATEGORIES.map((c) => ({ href: `/category/${c.slug}`, label: c.name })),
-  { href: "/our-roots", label: "Our Roots" },
-];
-
-export default function SiteHeader() {
+export default function SiteHeader({
+  categories = [],
+}: {
+  categories?: { slug: string; name: string }[];
+}) {
   const [open, setOpen] = useState(false);
   const { count, ready } = useCart();
+
+  const navLinks = [
+    ...categories.map((c) => ({ href: `/category/${c.slug}`, label: c.name })),
+    { href: "/our-roots", label: "Our Roots" },
+  ];
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-bg/85 backdrop-blur-md">

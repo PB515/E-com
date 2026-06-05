@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getCategory } from "@/lib/catalog";
+import { getStoreCategory } from "@/lib/categories";
 import { getProductsByCategory } from "@/lib/products";
 import { getPublicTaxMode } from "@/lib/tax-settings";
 import ProductCard from "@/components/shop/ProductCard";
 import NewsletterBand from "@/components/site/NewsletterBand";
 import Reveal from "@/components/site/Reveal";
 
-// Categories are fixed; product data is read live from Supabase per request.
+// Categories are admin-managed (DB); product data is read live per request.
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
@@ -16,9 +16,12 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const category = getCategory(slug);
+  const category = await getStoreCategory(slug);
   if (!category) return { title: "Not found" };
-  return { title: `Oxidised ${category.name}`, description: category.intro };
+  return {
+    title: category.seoTitle || `Oxidised ${category.name}`,
+    description: category.seoDescription || category.description,
+  };
 }
 
 export default async function CategoryPage({
@@ -27,7 +30,7 @@ export default async function CategoryPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const category = getCategory(slug);
+  const category = await getStoreCategory(slug);
   if (!category) notFound();
 
   const products = await getProductsByCategory(slug);
@@ -45,7 +48,7 @@ export default async function CategoryPage({
         <h1 className="mt-3 font-heading text-4xl text-ink lg:text-5xl">
           {category.name}
         </h1>
-        <p className="mt-3 max-w-2xl text-ink-muted">{category.intro}</p>
+        <p className="mt-3 max-w-2xl text-ink-muted">{category.description}</p>
       </section>
 
       <section className="mx-auto max-w-[1400px] px-5 py-10 sm:px-8">
