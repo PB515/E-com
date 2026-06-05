@@ -98,6 +98,9 @@ export async function createProduct(input: CreateProductInput) {
   }
   // every product gets a default variant (stock lives on variants)
   await sb.from("product_variants").insert({ product_id: created.id, label: "Standard", stock: Math.max(0, Math.floor(input.stock || 0)), sort_order: 0 });
+  // primary category membership (so it appears on its category page + can be merchandised)
+  const { data: cat } = await sb.from("categories").select("id").eq("slug", input.category).maybeSingle();
+  if (cat) await sb.from("product_categories").insert({ category_id: cat.id, product_id: created.id, is_primary: true, sort_order: 0 });
   await logAdminAction("product.create", "product", slug, { name: input.name });
   revalidateStorefront(slug);
   return { ok: true as const, slug };

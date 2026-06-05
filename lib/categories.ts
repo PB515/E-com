@@ -1,6 +1,8 @@
 import "server-only";
 import { createPublicClient } from "@/lib/supabase/public";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { mapProductRow, PRODUCT_SELECT, type ProductRow } from "@/lib/products";
+import type { Product } from "@/lib/catalog";
 
 // Server data layer for admin-managed categories. Storefront reads use the
 // public (anon) client + RLS public-read; admin listing uses the service-role
@@ -111,10 +113,10 @@ export async function getAdminCategories(): Promise<AdminCategory[]> {
   const sb = createAdminClient();
   const { data } = await sb.from("categories").select(COLS).order("nav_order").order("name");
   const rows = (data ?? []) as Row[];
-  // product counts per category (for the delete guard / overview)
-  const { data: prods } = await sb.from("products").select("category");
+  // member count per category (primary + secondary), from the link table
+  const { data: links } = await sb.from("product_categories").select("category_id");
   const counts = new Map<string, number>();
-  for (const p of prods ?? []) counts.set(p.category, (counts.get(p.category) ?? 0) + 1);
+  for (const l of links ?? []) counts.set(l.category_id, (counts.get(l.category_id) ?? 0) + 1);
   return rows.map((r) => ({
     ...toStore(r),
     id: r.id,
@@ -125,11 +127,72 @@ export async function getAdminCategories(): Promise<AdminCategory[]> {
     navOrder: r.nav_order,
     homeOrder: r.home_order,
     footerOrder: r.footer_order,
-    productCount: counts.get(r.slug) ?? 0,
+    productCount: counts.get(r.id) ?? 0,
   }));
 }
 
 export async function getAdminCategory(id: string): Promise<AdminCategory | null> {
   const all = await getAdminCategories();
   return all.find((c) => c.id === id) ?? null;
+}
+
+// Products shown on a category page: every member (primary + secondary),
+// featured first, then the manual sort order. Active products only.
+export async function getCategoryProducts(slug: string, limit?: number): Promise<Product[]> {
+  const sb = createPublicClient();
+  const { data: cat } = await sb.from("categories").select("id").eq("slug", slug).eq("is_active", true).maybeSingle();
+  if (!cat) return [];
+  let q = sb
+    .from("product_categories")
+    .select(`sort_order,is_featured, products!inner(${PRODUCT_SELECT})`)
+    .eq("category_id", cat.id)
+    .eq("products.is_active", true)
+    .order("is_featured", { ascending: false })
+    .order("sort_order");
+  if (limit) q = q.limit(limit);
+  const { data } = await q;
+  return (data ?? [])
+    .map((r: { products: unknown }) => (r.products ? mapProductRow(r.products as ProductRow) : null))
+    .filter((p): p is Product => p !== null);
+}
+
+export interface CategoryProductLink {
+  productId: string;
+  name: string;
+  slug: string;
+  primaryCategory: string;
+  inCategory: boolean;
+  isPrimary: boolean;
+  isFeatured: boolean;
+  sortOrder: number;
+}
+
+// Category meta + EVERY active product flagged with its membership in THIS
+// category (for the merchandising picker on the category editor).
+export async function getAdminCategoryProducts(id: string): Promise<CategoryProductLink[]> {
+  const sb = createAdminClient();
+  const [{ data: products }, { data: links }] = await Promise.all([
+    sb.from("products").select("id,name,slug,category").eq("is_active", true).order("name"),
+    sb.from("product_categories").select("product_id,sort_order,is_featured,is_primary").eq("category_id", id),
+  ]);
+  const linkBy = new Map((links ?? []).map((l) => [l.product_id, l]));
+  const list: CategoryProductLink[] = (products ?? []).map((p) => {
+    const link = linkBy.get(p.id);
+    return {
+      productId: p.id,
+      name: p.name,
+      slug: p.slug,
+      primaryCategory: p.category,
+      inCategory: !!link,
+      isPrimary: link?.is_primary ?? false,
+      isFeatured: link?.is_featured ?? false,
+      sortOrder: link?.sort_order ?? 0,
+    };
+  });
+  list.sort((a, b) => {
+    if (a.inCategory !== b.inCategory) return a.inCategory ? -1 : 1;
+    if (a.inCategory) return a.sortOrder - b.sortOrder || a.name.localeCompare(b.name);
+    return a.name.localeCompare(b.name);
+  });
+  return list;
 }

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getStoreCategory } from "@/lib/categories";
-import { getProductsByCategory } from "@/lib/products";
+import { getStoreCategory, getCategoryProducts } from "@/lib/categories";
 import { getPublicTaxMode } from "@/lib/tax-settings";
 import ProductCard from "@/components/shop/ProductCard";
 import NewsletterBand from "@/components/site/NewsletterBand";
@@ -33,7 +32,7 @@ export default async function CategoryPage({
   const category = await getStoreCategory(slug);
   if (!category) notFound();
 
-  const products = await getProductsByCategory(slug);
+  const products = await getCategoryProducts(slug);
   const showGst = (await getPublicTaxMode()) === "gst";
 
   return (

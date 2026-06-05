@@ -132,6 +132,55 @@ export async function deleteCategory(id: string) {
   return { ok: true as const };
 }
 
+// ── product membership / merchandising ───────────────────────────────────────
+export async function setProductInCategory(categoryId: string, productId: string, inCategory: boolean) {
+  const sb = await createClient();
+  if (inCategory) {
+    const { count } = await sb.from("product_categories").select("product_id", { count: "exact", head: true }).eq("category_id", categoryId);
+    const { error } = await sb.from("product_categories").upsert(
+      { category_id: categoryId, product_id: productId, sort_order: count ?? 0 },
+      { onConflict: "category_id,product_id", ignoreDuplicates: true },
+    );
+    if (error) return { error: error.message };
+  } else {
+    // never remove a product's PRIMARY (home) category membership here
+    const { data: link } = await sb.from("product_categories").select("is_primary").eq("category_id", categoryId).eq("product_id", productId).maybeSingle();
+    if (link?.is_primary) return { error: "This is the product's primary category — it can't be removed here." };
+    const { error } = await sb.from("product_categories").delete().eq("category_id", categoryId).eq("product_id", productId);
+    if (error) return { error: error.message };
+  }
+  revalidateStore();
+  revalidatePath(`/admin/categories/${categoryId}`);
+  return { ok: true as const };
+}
+
+export async function setCategoryProductFeatured(categoryId: string, productId: string, value: boolean) {
+  const sb = await createClient();
+  const { error } = await sb.from("product_categories").update({ is_featured: value }).eq("category_id", categoryId).eq("product_id", productId);
+  if (error) return { error: error.message };
+  revalidateStore();
+  revalidatePath(`/admin/categories/${categoryId}`);
+  return { ok: true as const };
+}
+
+export async function moveCategoryProduct(categoryId: string, productId: string, dir: "up" | "down") {
+  const sb = await createClient();
+  const { data: links } = await sb.from("product_categories").select("product_id")
+    .eq("category_id", categoryId).order("is_featured", { ascending: false }).order("sort_order");
+  if (!links) return { error: "Could not load." };
+  const idx = links.findIndex((l) => l.product_id === productId);
+  const swapIdx = dir === "up" ? idx - 1 : idx + 1;
+  if (idx < 0 || swapIdx < 0 || swapIdx >= links.length) return { ok: true as const };
+  const ordered = [...links];
+  [ordered[idx], ordered[swapIdx]] = [ordered[swapIdx], ordered[idx]];
+  for (let i = 0; i < ordered.length; i++) {
+    await sb.from("product_categories").update({ sort_order: i }).eq("category_id", categoryId).eq("product_id", ordered[i].product_id);
+  }
+  revalidateStore();
+  revalidatePath(`/admin/categories/${categoryId}`);
+  return { ok: true as const };
+}
+
 // Category card image. Admin-verified, then service-role handles Storage.
 export async function uploadCategoryImage(id: string, formData: FormData) {
   const supa = await createClient();
